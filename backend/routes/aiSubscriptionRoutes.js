@@ -1,0 +1,2 @@
+const r=require("express").Router();const c=require("../controllers/aiSubscriptionController");const {protect,adminOnly}=require("../middleware/authMiddleware");
+r.get("/plans",c.list);r.get("/me",protect,c.my);r.post("/trial",protect,c.startTrial);r.get("/invoices/:id/pdf",protect,c.invoicePdf);r.post("/order",protect,c.order);r.post("/verify",protect,c.verify);r.post("/plans",protect,adminOnly,c.create);r.patch("/plans/:id",protect,adminOnly,c.update);module.exports=r;

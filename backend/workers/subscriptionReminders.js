@@ -1,0 +1,1 @@
+require("dotenv").config();const mongoose=require("mongoose");const {expiryAlerts}=require("../controllers/aiSubscriptionController");(async()=>{try{await mongoose.connect(process.env.MONGO_URI);await expiryAlerts();console.log("Subscription reminders completed");}catch(e){console.error(e);process.exitCode=1;}finally{await mongoose.disconnect();}})();

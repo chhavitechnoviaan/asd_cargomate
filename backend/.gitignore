@@ -1,0 +1,14 @@
+# Dependencies
+node_modules
+
+# Environment variables
+*.env
+
+# Logs
+*.log
+
+# Mac files
+.DS_Store
+
+# Uploaded files
+uploads
