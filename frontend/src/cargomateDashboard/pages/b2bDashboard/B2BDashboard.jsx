@@ -492,8 +492,7 @@ const [accountSummary, setAccountSummary] = useState({});
                <img src={logo} className="h-10" onClick={() => navigate("/")} />
              </div>
      
-             <NoticeBanner />*/}
-             </div>
+             <NoticeBanner />
      
              <div className="flex items-center gap-1.5 ml-auto">
                <button onClick={() => setNotifications(true)} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-600 relative">

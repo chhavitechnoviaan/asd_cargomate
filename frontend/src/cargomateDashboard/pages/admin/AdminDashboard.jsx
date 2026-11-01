@@ -131,6 +131,7 @@ import order from '../../assets/icon/orders.png'
 
 import logo from "../../assets/Images/logo.png";
 import CreateNewInvoice from "./CreateNewInvoice";
+import NoticeManagementModal from "../../components/adminComponent/NoticeManagementModal";
 
 import MessagesModal from "../../components/Messages";
 import NotificationsModal from "../../components/Notifications";
@@ -886,7 +887,7 @@ export default function AdminDashboard({profileMode=false}) {
           {notifications && (<NotificationsModal onClose={() => setNotifications(false)} />)}
 
 
-      {showNotice && <CreateNotice setShowNotice={setShowNotice} />}
+      <NoticeManagementModal isOpen={showNotice} onClose={() => setShowNotice(false)} />
       
        
       {fabOpen && <div className="fixed inset-0 z-30" onClick={() => setFabOpen(false)} />}
