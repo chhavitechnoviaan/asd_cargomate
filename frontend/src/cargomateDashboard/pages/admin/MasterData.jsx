@@ -265,6 +265,10 @@ export default function MasterData() {
   // Editing state
   const [editingRecord, setEditingRecord] = useState(null);
 
+  // Cards visibility (can be closed via X or reopened via top buttons)
+  const [showAddCard, setShowAddCard] = useState(true);
+  const [showBulkCard, setShowBulkCard] = useState(true);
+
   // Form State for "Add New Record" / "Edit Record"
   const [recordForm, setRecordForm] = useState({
     hsCode: "",
@@ -416,6 +420,7 @@ export default function MasterData() {
 
   // Scroll to Add New Record
   const handleScrollToAdd = () => {
+    setShowAddCard(true);
     setEditingRecord(null);
     setRecordForm({
       hsCode: "",
@@ -431,17 +436,23 @@ export default function MasterData() {
       value: "",
       status: "In Transit",
     });
-    addCardRef.current?.scrollIntoView({ behavior: "smooth" });
-    setTimeout(() => hsInputRef.current?.focus(), 400);
+    setTimeout(() => {
+      addCardRef.current?.scrollIntoView({ behavior: "smooth" });
+      hsInputRef.current?.focus();
+    }, 100);
   };
 
   // Scroll to Bulk Upload CSV
   const handleScrollToBulk = () => {
-    bulkCardRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowBulkCard(true);
+    setTimeout(() => {
+      bulkCardRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   // Handle Edit click from table row
   const handleEditClick = (rec) => {
+    setShowAddCard(true);
     setEditingRecord(rec);
     setRecordForm({
       hsCode: rec.hsCode || "",
@@ -457,8 +468,10 @@ export default function MasterData() {
       value: rec.value || "",
       status: rec.status || "In Transit",
     });
-    addCardRef.current?.scrollIntoView({ behavior: "smooth" });
-    setTimeout(() => hsInputRef.current?.focus(), 400);
+    setTimeout(() => {
+      addCardRef.current?.scrollIntoView({ behavior: "smooth" });
+      hsInputRef.current?.focus();
+    }, 100);
   };
 
   // Reset form
@@ -637,7 +650,7 @@ export default function MasterData() {
   };
 
   return (
-    <div className="space-y-4 pb-12 text-slate-800">
+    <div className="space-y-4 pb-28 text-slate-800 max-w-full">
       {/* 1. Header with Title and Top Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -670,11 +683,11 @@ export default function MasterData() {
         </div>
       </div>
 
-      {/* 2. Top Filter Bar Card (Single Horizontal Row) */}
+      {/* 2. Top Filter Bar Card (Responsive Single/Wrap Layout) */}
       <div className="bg-white rounded-xl border border-gray-200/90 p-3.5 sm:p-4 shadow-xs">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2.5 items-end">
+        <div className="flex flex-wrap xl:flex-nowrap items-end gap-2.5">
           {/* HS Code / Product / ID */}
-          <div className="lg:col-span-1">
+          <div className="flex-1 min-w-[170px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               HS Code / Product / ID
             </label>
@@ -696,7 +709,7 @@ export default function MasterData() {
           </div>
 
           {/* Origin Country */}
-          <div>
+          <div className="w-full sm:w-[130px] lg:w-[135px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Origin Country
             </label>
@@ -720,7 +733,7 @@ export default function MasterData() {
           </div>
 
           {/* Destination */}
-          <div>
+          <div className="w-full sm:w-[130px] lg:w-[135px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Destination
             </label>
@@ -744,7 +757,7 @@ export default function MasterData() {
           </div>
 
           {/* Importer */}
-          <div>
+          <div className="w-full sm:w-[130px] lg:w-[135px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Importer
             </label>
@@ -768,7 +781,7 @@ export default function MasterData() {
           </div>
 
           {/* Exporter */}
-          <div>
+          <div className="w-full sm:w-[130px] lg:w-[135px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Exporter
             </label>
@@ -792,7 +805,7 @@ export default function MasterData() {
           </div>
 
           {/* Port of Loading */}
-          <div>
+          <div className="w-full sm:w-[130px] lg:w-[135px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Port of Loading
             </label>
@@ -815,21 +828,17 @@ export default function MasterData() {
             </div>
           </div>
 
-          {/* Apply Filters Button */}
-          <div>
+          {/* Action Buttons: Apply & Reset */}
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
             <button
               onClick={handleApplyFilters}
-              className="w-full h-[36px] bg-[#00897B] hover:bg-[#00796B] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs cursor-pointer flex items-center justify-center"
+              className="h-[36px] px-4 bg-[#00897B] hover:bg-[#00796B] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs cursor-pointer flex items-center justify-center whitespace-nowrap"
             >
               Apply Filters
             </button>
-          </div>
-
-          {/* Reset Button */}
-          <div>
             <button
               onClick={handleResetFilters}
-              className="w-full h-[36px] border border-[#00897B] text-[#00897B] hover:bg-teal-50/60 bg-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              className="h-[36px] px-3.5 border border-[#00897B] text-[#00897B] hover:bg-teal-50/60 bg-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <RotateCcw size={13} />
               <span>Reset</span>
@@ -900,7 +909,7 @@ export default function MasterData() {
       </div>
 
       {/* 4. Trade Records Table */}
-      <div className="bg-white rounded-xl border border-gray-200/90 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200/90 shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
@@ -1047,13 +1056,13 @@ export default function MasterData() {
           </table>
         </div>
 
-        {/* Table Pagination Footer */}
-        <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
+        {/* Table Pagination Footer (Always 100% visible, not hidden inside horizontal scroll) */}
+        <div className="p-3.5 sm:p-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white">
           <p className="text-xs text-gray-500">
             Showing {totalRecords === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + pageSize, totalRecords)} of {totalRecords} records
           </p>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 ml-auto">
             {/* Prev Button */}
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -1091,358 +1100,366 @@ export default function MasterData() {
         </div>
       </div>
 
-      {/* 5. The Two Cards Shown Side-by-Side Below the Table (Matching Screenshot) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-1">
+      {/* 5. The Two Cards Shown Below the Table (Stacked on smaller screens, 2-cols on XL) */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pt-2">
         {/* Card 1: Add New Record (Left) */}
-        <div
-          ref={addCardRef}
-          id="add-record-card"
-          className="bg-white rounded-xl border border-gray-200/90 shadow-xs p-5 sm:p-6 relative flex flex-col justify-between"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
-            <h3 className="text-base font-bold text-gray-900">
-              {editingRecord ? `Edit Record (${editingRecord._id})` : "Add New Record"}
-            </h3>
-            <button
-              type="button"
-              onClick={handleCancelForm}
-              className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          {/* Form Fields */}
-          <form onSubmit={handleSaveRecord} className="space-y-3.5">
-            {/* Row 1: HS Code & Product Description */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  HS Code <span className="text-red-500">*</span>
-                </label>
-                <input
-                  ref={hsInputRef}
-                  type="text"
-                  required
-                  value={recordForm.hsCode}
-                  onChange={(e) => setRecordForm({ ...recordForm, hsCode: e.target.value })}
-                  placeholder="Enter HS code"
-                  className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Product Description <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={recordForm.description}
-                  onChange={(e) => setRecordForm({ ...recordForm, description: e.target.value })}
-                  placeholder="Enter product description"
-                  className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                />
-              </div>
-            </div>
-
-            {/* Row 2: Importer & Exporter */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Importer <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={recordForm.importer}
-                    onChange={(e) => setRecordForm({ ...recordForm, importer: e.target.value })}
-                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                  >
-                    <option value="">Select importer</option>
-                    {uniqueImporters.filter(i => i !== "All Importers").map((imp, idx) => (
-                      <option key={idx} value={imp}>{imp}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Exporter <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={recordForm.exporter}
-                    onChange={(e) => setRecordForm({ ...recordForm, exporter: e.target.value })}
-                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                  >
-                    <option value="">Select exporter</option>
-                    {uniqueExporters.filter(e => e !== "All Exporters").map((exp, idx) => (
-                      <option key={idx} value={exp}>{exp}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Row 3: Origin & Destination Country */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Origin Country <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={recordForm.originCountry}
-                    onChange={(e) => setRecordForm({ ...recordForm, originCountry: e.target.value })}
-                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                  >
-                    <option value="">Select origin country</option>
-                    {Object.keys(countryCodes).map((c, i) => (
-                      <option key={i} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Destination Country <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={recordForm.destinationCountry}
-                    onChange={(e) => setRecordForm({ ...recordForm, destinationCountry: e.target.value })}
-                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                  >
-                    <option value="">Select destination country</option>
-                    {Object.keys(countryCodes).map((c, i) => (
-                      <option key={i} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Row 4: Port of Loading & Port of Discharge */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Port of Loading <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={recordForm.portOfLoading}
-                    onChange={(e) => setRecordForm({ ...recordForm, portOfLoading: e.target.value })}
-                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                  >
-                    <option value="">Select port of loading</option>
-                    {uniquePorts.filter(p => p !== "All Ports").map((p, idx) => (
-                      <option key={idx} value={p}>{p}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Port of Discharge <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={recordForm.portOfDischarge}
-                    onChange={(e) => setRecordForm({ ...recordForm, portOfDischarge: e.target.value })}
-                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                  >
-                    <option value="">Select port of discharge</option>
-                    {Array.from(new Set(records.map(r => r.portOfDischarge))).map((p, idx) => (
-                      <option key={idx} value={p}>{p}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Row 5: Ship Date, Arrival Date & Value */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Ship Date <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    required
-                    value={recordForm.shipDate}
-                    onChange={(e) => setRecordForm({ ...recordForm, shipDate: e.target.value })}
-                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Arrival Date <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    required
-                    value={recordForm.arrivalDate}
-                    onChange={(e) => setRecordForm({ ...recordForm, arrivalDate: e.target.value })}
-                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Value (INR) <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">₹</span>
-                  <input
-                    type="number"
-                    required
-                    value={recordForm.value}
-                    onChange={(e) => setRecordForm({ ...recordForm, value: e.target.value })}
-                    placeholder="Enter value"
-                    className="w-full h-[36px] text-xs pl-6 pr-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Buttons */}
-            <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={handleCancelForm}
-                className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
-              >
-                Save Record
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Card 2: Bulk Upload CSV (Right) */}
-        <div
-          ref={bulkCardRef}
-          id="bulk-upload-card"
-          className="bg-white rounded-xl border border-gray-200/90 shadow-xs p-5 sm:p-6 relative flex flex-col justify-between"
-        >
-          {/* Header */}
-          <div>
-            <div className="flex items-start justify-between pb-3 border-b border-gray-100">
-              <div>
-                <h3 className="text-base font-bold text-gray-900">Bulk Upload CSV</h3>
-                <p className="text-xs text-gray-500 mt-0.5">Import multiple trade records at once.</p>
-              </div>
-              <div className="flex items-center gap-3">
+        {showAddCard && (
+          <div
+            ref={addCardRef}
+            id="add-record-card"
+            className="bg-white rounded-xl border border-gray-200/90 shadow-xs p-5 sm:p-6 relative flex flex-col justify-between"
+          >
+            {/* Header */}
+            <div>
+              <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 mb-4">
+                <h3 className="text-base font-bold text-gray-900">
+                  {editingRecord ? `Edit Record (${editingRecord._id})` : "Add New Record"}
+                </h3>
                 <button
                   type="button"
-                  onClick={handleDownloadTemplate}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00897B] hover:text-[#00796B] transition-colors cursor-pointer"
-                  title="Download sample CSV template"
-                >
-                  <Download size={14} />
-                  <span>Download CSV Template</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUploadedFile(null)}
+                  onClick={() => setShowAddCard(false)}
                   className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  title="Close section"
                 >
                   <X size={18} />
                 </button>
               </div>
-            </div>
 
-            {/* Drag & Drop Dropzone */}
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDragging(false);
-                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                  setUploadedFile(e.dataTransfer.files[0]);
-                }
-              }}
-              onClick={() => document.getElementById("csv-file-input-card").click()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center my-4 ${
-                isDragging
-                  ? "border-[#00897B] bg-teal-50/50"
-                  : "border-[#80cbc4] hover:border-[#00897B] bg-[#e0f2f1]/25 hover:bg-[#e0f2f1]/40"
-              }`}
-            >
-              <div className="w-12 h-12 rounded-full bg-teal-100/70 text-[#00897B] flex items-center justify-center mb-2.5">
-                <UploadCloud size={28} />
+              {/* Form Fields */}
+              <form onSubmit={handleSaveRecord} className="space-y-3.5">
+                {/* Row 1: HS Code & Product Description */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      HS Code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      ref={hsInputRef}
+                      type="text"
+                      required
+                      value={recordForm.hsCode}
+                      onChange={(e) => setRecordForm({ ...recordForm, hsCode: e.target.value })}
+                      placeholder="Enter HS code"
+                      className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Product Description <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={recordForm.description}
+                      onChange={(e) => setRecordForm({ ...recordForm, description: e.target.value })}
+                      placeholder="Enter product description"
+                      className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: Importer & Exporter */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Importer <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={recordForm.importer}
+                        onChange={(e) => setRecordForm({ ...recordForm, importer: e.target.value })}
+                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                      >
+                        <option value="">Select importer</option>
+                        {uniqueImporters.filter(i => i !== "All Importers").map((imp, idx) => (
+                          <option key={idx} value={imp}>{imp}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Exporter <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={recordForm.exporter}
+                        onChange={(e) => setRecordForm({ ...recordForm, exporter: e.target.value })}
+                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                      >
+                        <option value="">Select exporter</option>
+                        {uniqueExporters.filter(e => e !== "All Exporters").map((exp, idx) => (
+                          <option key={idx} value={exp}>{exp}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 3: Origin & Destination Country */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Origin Country <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={recordForm.originCountry}
+                        onChange={(e) => setRecordForm({ ...recordForm, originCountry: e.target.value })}
+                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                      >
+                        <option value="">Select origin country</option>
+                        {Object.keys(countryCodes).map((c, i) => (
+                          <option key={i} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Destination Country <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={recordForm.destinationCountry}
+                        onChange={(e) => setRecordForm({ ...recordForm, destinationCountry: e.target.value })}
+                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                      >
+                        <option value="">Select destination country</option>
+                        {Object.keys(countryCodes).map((c, i) => (
+                          <option key={i} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 4: Port of Loading & Port of Discharge */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Port of Loading <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={recordForm.portOfLoading}
+                        onChange={(e) => setRecordForm({ ...recordForm, portOfLoading: e.target.value })}
+                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                      >
+                        <option value="">Select port of loading</option>
+                        {uniquePorts.filter(p => p !== "All Ports").map((p, idx) => (
+                          <option key={idx} value={p}>{p}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Port of Discharge <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={recordForm.portOfDischarge}
+                        onChange={(e) => setRecordForm({ ...recordForm, portOfDischarge: e.target.value })}
+                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                      >
+                        <option value="">Select port of discharge</option>
+                        {Array.from(new Set(records.map(r => r.portOfDischarge))).map((p, idx) => (
+                          <option key={idx} value={p}>{p}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 5: Ship Date, Arrival Date & Value */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Ship Date <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        required
+                        value={recordForm.shipDate}
+                        onChange={(e) => setRecordForm({ ...recordForm, shipDate: e.target.value })}
+                        className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Arrival Date <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        required
+                        value={recordForm.arrivalDate}
+                        onChange={(e) => setRecordForm({ ...recordForm, arrivalDate: e.target.value })}
+                        className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Value (INR) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">₹</span>
+                      <input
+                        type="number"
+                        required
+                        value={recordForm.value}
+                        onChange={(e) => setRecordForm({ ...recordForm, value: e.target.value })}
+                        placeholder="Enter value"
+                        className="w-full h-[36px] text-xs pl-6 pr-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Buttons */}
+                <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleCancelForm}
+                    className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
+                  >
+                    Save Record
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Card 2: Bulk Upload CSV (Right) */}
+        {showBulkCard && (
+          <div
+            ref={bulkCardRef}
+            id="bulk-upload-card"
+            className="bg-white rounded-xl border border-gray-200/90 shadow-xs p-5 sm:p-6 relative flex flex-col justify-between"
+          >
+            {/* Header with Title and Link */}
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3.5 border-b border-gray-100">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Bulk Upload CSV</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Import multiple trade records at once.</p>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplate}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00897B] hover:text-[#00796B] transition-colors whitespace-nowrap cursor-pointer"
+                    title="Download sample CSV template"
+                  >
+                    <Download size={14} className="shrink-0" />
+                    <span>Download CSV Template</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowBulkCard(false)}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    title="Close section"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
-              <p className="text-xs font-bold text-gray-800">
-                {uploadedFile ? uploadedFile.name : "Drag & drop your CSV file here"}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                or <span className="text-[#00897B] font-semibold underline">browse files</span>
-              </p>
-              <span className="text-[10px] text-gray-400 mt-1.5">
-                .csv files only
-              </span>
-              <input
-                id="csv-file-input-card"
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setUploadedFile(e.target.files[0]);
+
+              {/* Drag & Drop Dropzone */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    setUploadedFile(e.dataTransfer.files[0]);
                   }
                 }}
-              />
+                onClick={() => document.getElementById("csv-file-input-card").click()}
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center my-4 ${
+                  isDragging
+                    ? "border-[#00897B] bg-teal-50/50"
+                    : "border-[#80cbc4] hover:border-[#00897B] bg-[#e0f2f1]/25 hover:bg-[#e0f2f1]/40"
+                }`}
+              >
+                <div className="w-12 h-12 rounded-full bg-teal-100/70 text-[#00897B] flex items-center justify-center mb-2.5">
+                  <UploadCloud size={28} />
+                </div>
+                <p className="text-xs font-bold text-gray-800">
+                  {uploadedFile ? uploadedFile.name : "Drag & drop your CSV file here"}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  or <span className="text-[#00897B] font-semibold underline">browse files</span>
+                </p>
+                <span className="text-[10px] text-gray-400 mt-1.5">
+                  .csv files only
+                </span>
+                <input
+                  id="csv-file-input-card"
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setUploadedFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Informational Alert Box */}
+              <div className="bg-[#e1f5fe]/80 border border-[#b3e5fc] rounded-xl p-3 flex items-center gap-2.5 text-[#0288d1] text-xs mb-4">
+                <Info size={16} className="shrink-0 text-[#0288d1]" />
+                <span>Match the template columns before uploading.</span>
+              </div>
             </div>
 
-            {/* Informational Box */}
-            <div className="bg-[#e1f5fe]/80 border border-[#b3e5fc] rounded-xl p-3 flex items-center gap-2.5 text-[#0288d1] text-xs mb-4">
-              <Info size={16} className="shrink-0 text-[#0288d1]" />
-              <span>Match the template columns before uploading.</span>
+            {/* Footer Buttons with Safe Margin from Bottom-Right Floating FAB Button */}
+            <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5 pr-2">
+              <button
+                type="button"
+                onClick={() => setUploadedFile(null)}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleValidateCSV}
+                className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
+              >
+                Validate & Preview
+              </button>
             </div>
           </div>
-
-          {/* Footer */}
-          <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              onClick={() => setUploadedFile(null)}
-              className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleValidateCSV}
-              className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
-            >
-              Validate & Preview
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 6. View Record Details Modal (When clicking Eye icon) */}
