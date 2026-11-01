@@ -207,6 +207,7 @@ import Invoices from "./Invoice";
 import Reports from "./Reports";
 import AlertNotification from "./AlertNotification";
 import Settings from "./Settings";
+import HelpSupportDashboard from "../userDashboard/Help&Support";
 
 
 
@@ -368,6 +369,10 @@ const sidebarSections = [
   {
     title: "System",
     items: [
+      {
+        icon: FiHelpCircle,
+        label: "Help & Support",
+      },
       {
         icon: FiCreditCard,
         label: "Settings",
@@ -661,6 +666,10 @@ const [accountSummary, setAccountSummary] = useState({});
               <AlertNotification />
             )}  
             
+              {activeTab === "Help & Support" && (
+              <HelpSupportDashboard role="b2b" />
+            )}
+
               {activeTab === "Settings" && (
               <Settings initialTab={profileMode ? "General" : "General"} showAccountProfile={profileMode} />
             )}   
@@ -1190,7 +1199,7 @@ const regionMarkers = {
             {/* --- FOOTER STRIP --- */}
             <div className="flex flex-col sm:flex-row justify-between items-center text-[10px] text-[#94A3B8] font-semibold mt-8 border-t border-[#E2E8F0] pt-4 gap-2">
                 <div>ⓘ All data is updated daily. Last updated on {updateTime}</div>
-                <button className="hover:text-[#64748B]">Help Center</button>
+                <button onClick={() => setMainTab && setMainTab("Help & Support")} className="hover:text-[#64748B]">Help Center</button>
             </div>
         </div>
     );
