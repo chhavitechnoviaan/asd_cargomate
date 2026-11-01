@@ -63,6 +63,8 @@ app.use(
 app.use("/api/test", require("./routes/testroutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/notices", require("./routes/noticeRoutes"));
+app.use("/api/notice", require("./routes/noticeRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/roles", require("./routes/roleRoutes"));
 app.use("/api/plans", require("./routes/planRoutes"));
