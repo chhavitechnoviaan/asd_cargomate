@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import ReactCountryFlag from "react-country-flag";
 import Swal from "sweetalert2";
 import {
@@ -9,16 +9,16 @@ import {
   RotateCcw,
   Plus,
   Upload,
-  Columns,
+  LayoutGrid,
   Eye,
   Edit2,
-  Trash2,
   X,
   Check,
   Download,
   Calendar,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   UploadCloud,
   Info,
   FileText
@@ -54,7 +54,7 @@ const countryCodes = {
   Canada: "CA",
 };
 
-// Initial realistic dataset matching the Master Data design
+// Initial realistic dataset matching the exact screenshot records
 const initialShipmentRecords = [
   {
     _id: "SHIP001",
@@ -227,7 +227,12 @@ const allColumns = [
 export default function MasterData() {
   const [records, setRecords] = useState(initialShipmentRecords);
 
-  // Active filters in form inputs
+  // References for smooth scrolling
+  const addCardRef = useRef(null);
+  const bulkCardRef = useRef(null);
+  const hsInputRef = useRef(null);
+
+  // Filter form states
   const [filterInputs, setFilterInputs] = useState({
     search: "",
     originCountry: "All Countries",
@@ -237,7 +242,6 @@ export default function MasterData() {
     portOfLoading: "All Ports",
   });
 
-  // Applied filters affecting table
   const [appliedFilters, setAppliedFilters] = useState({
     search: "",
     originCountry: "All Countries",
@@ -247,21 +251,21 @@ export default function MasterData() {
     portOfLoading: "All Ports",
   });
 
-  // Table controls
-  const [pageSize, setPageSize] = useState(10);
+  // Table controls (Default 6 records to match screenshot exactly)
+  const [pageSize, setPageSize] = useState(6);
   const [currentPage, setCurrentPage] = useState(1);
   const [visibleColumns, setVisibleColumns] = useState(
     allColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
   );
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
 
-  // Modals state
-  const [showAddEditModal, setShowAddEditModal] = useState(false);
-  const [editingRecord, setEditingRecord] = useState(null);
+  // View Modal state
   const [viewingRecord, setViewingRecord] = useState(null);
-  const [showBulkModal, setShowBulkModal] = useState(false);
 
-  // Add / Edit Record Form State
+  // Editing state
+  const [editingRecord, setEditingRecord] = useState(null);
+
+  // Form State for "Add New Record" / "Edit Record"
   const [recordForm, setRecordForm] = useState({
     hsCode: "",
     description: "",
@@ -277,11 +281,11 @@ export default function MasterData() {
     status: "In Transit",
   });
 
-  // Bulk Upload File State
+  // Bulk Upload state
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Format Value in INR (e.g. ₹ 2.45 Cr, ₹ 1.82 Cr)
+  // Format Value in INR matching screenshot (e.g. ₹ 2.45 Cr, ₹ 1.82 Cr)
   const formatValueINR = (val) => {
     if (typeof val === "string" && val.includes("₹")) return val;
     const num = Number(val);
@@ -295,7 +299,7 @@ export default function MasterData() {
     return `₹ ${num.toLocaleString("en-IN")}`;
   };
 
-  // Format Date (e.g. 05 Aug 2026)
+  // Format Date matching screenshot (e.g. 05 Aug 2026)
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
     const d = new Date(dateStr);
@@ -358,7 +362,6 @@ export default function MasterData() {
   // Filter records based on appliedFilters
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
-      // Search HS Code, Product Description, or ID
       if (appliedFilters.search.trim()) {
         const q = appliedFilters.search.toLowerCase();
         const matchHs = (r.hsCode || "").toLowerCase().includes(q);
@@ -366,47 +369,36 @@ export default function MasterData() {
         const matchId = (r._id || "").toLowerCase().includes(q);
         if (!matchHs && !matchDesc && !matchId) return false;
       }
-
-      // Origin Country
       if (
         appliedFilters.originCountry !== "All Countries" &&
         r.originCountry !== appliedFilters.originCountry
       ) {
         return false;
       }
-
-      // Destination Country
       if (
         appliedFilters.destinationCountry !== "All Countries" &&
         r.destinationCountry !== appliedFilters.destinationCountry
       ) {
         return false;
       }
-
-      // Importer
       if (
         appliedFilters.importer !== "All Importers" &&
         r.importer !== appliedFilters.importer
       ) {
         return false;
       }
-
-      // Exporter
       if (
         appliedFilters.exporter !== "All Exporters" &&
         r.exporter !== appliedFilters.exporter
       ) {
         return false;
       }
-
-      // Port of Loading
       if (
         appliedFilters.portOfLoading !== "All Ports" &&
         r.portOfLoading !== appliedFilters.portOfLoading
       ) {
         return false;
       }
-
       return true;
     });
   }, [records, appliedFilters]);
@@ -422,36 +414,42 @@ export default function MasterData() {
     setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Open Add Record Modal
-  const handleOpenAddModal = () => {
+  // Scroll to Add New Record
+  const handleScrollToAdd = () => {
     setEditingRecord(null);
     setRecordForm({
       hsCode: "",
       description: "",
       importer: "",
       exporter: "",
-      originCountry: "United States",
-      destinationCountry: "India",
+      originCountry: "",
+      destinationCountry: "",
       portOfLoading: "",
       portOfDischarge: "",
-      shipDate: new Date().toISOString().split("T")[0],
-      arrivalDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
+      shipDate: "",
+      arrivalDate: "",
       value: "",
       status: "In Transit",
     });
-    setShowAddEditModal(true);
+    addCardRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => hsInputRef.current?.focus(), 400);
   };
 
-  // Open Edit Record Modal
-  const handleOpenEditModal = (rec) => {
+  // Scroll to Bulk Upload CSV
+  const handleScrollToBulk = () => {
+    bulkCardRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Handle Edit click from table row
+  const handleEditClick = (rec) => {
     setEditingRecord(rec);
     setRecordForm({
       hsCode: rec.hsCode || "",
       description: rec.description || "",
       importer: rec.importer || "",
       exporter: rec.exporter || "",
-      originCountry: rec.originCountry || "United States",
-      destinationCountry: rec.destinationCountry || "India",
+      originCountry: rec.originCountry || "",
+      destinationCountry: rec.destinationCountry || "",
       portOfLoading: rec.portOfLoading || "",
       portOfDischarge: rec.portOfDischarge || "",
       shipDate: rec.shipDate || "",
@@ -459,7 +457,27 @@ export default function MasterData() {
       value: rec.value || "",
       status: rec.status || "In Transit",
     });
-    setShowAddEditModal(true);
+    addCardRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => hsInputRef.current?.focus(), 400);
+  };
+
+  // Reset form
+  const handleCancelForm = () => {
+    setEditingRecord(null);
+    setRecordForm({
+      hsCode: "",
+      description: "",
+      importer: "",
+      exporter: "",
+      originCountry: "",
+      destinationCountry: "",
+      portOfLoading: "",
+      portOfDischarge: "",
+      shipDate: "",
+      arrivalDate: "",
+      value: "",
+      status: "In Transit",
+    });
   };
 
   // Save Record (Add or Update)
@@ -475,7 +493,6 @@ export default function MasterData() {
     }
 
     if (editingRecord) {
-      // Update existing record
       setRecords((prev) =>
         prev.map((r) =>
           r._id === editingRecord._id
@@ -490,8 +507,8 @@ export default function MasterData() {
         timer: 1500,
         showConfirmButton: false,
       });
+      setEditingRecord(null);
     } else {
-      // Add new record
       const newId = `SHIP${String(records.length + 1).padStart(3, "0")}`;
       const newRec = {
         _id: newId,
@@ -508,30 +525,7 @@ export default function MasterData() {
       });
     }
 
-    setShowAddEditModal(false);
-  };
-
-  // Delete Record
-  const handleDeleteRecord = async (id) => {
-    const res = await Swal.fire({
-      title: "Delete Record?",
-      text: "Are you sure you want to delete this master data record?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      confirmButtonText: "Yes, delete",
-    });
-
-    if (res.isConfirmed) {
-      setRecords((prev) => prev.filter((r) => r._id !== id));
-      Swal.fire({
-        icon: "success",
-        title: "Deleted",
-        text: "Record removed successfully.",
-        timer: 1200,
-        showConfirmButton: false,
-      });
-    }
+    handleCancelForm();
   };
 
   // Download CSV Template
@@ -574,15 +568,7 @@ export default function MasterData() {
     document.body.removeChild(link);
   };
 
-  // Handle CSV Upload and Parse
-  const handleFileDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setUploadedFile(e.dataTransfer.files[0]);
-    }
-  };
-
+  // CSV Validation & Import
   const handleValidateCSV = () => {
     if (!uploadedFile) {
       Swal.fire({
@@ -607,9 +593,7 @@ export default function MasterData() {
           return;
         }
 
-        const headers = lines[0].split(",").map((h) => h.trim().replace(/^["']|["']$/g, ""));
         const newRecords = [];
-
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(",").map((c) => c.trim().replace(/^["']|["']$/g, ""));
           if (cols.length >= 2) {
@@ -632,7 +616,6 @@ export default function MasterData() {
         }
 
         setRecords((prev) => [...newRecords, ...prev]);
-        setShowBulkModal(false);
         setUploadedFile(null);
 
         Swal.fire({
@@ -654,22 +637,22 @@ export default function MasterData() {
   };
 
   return (
-    <div className="space-y-5 pb-10">
-      {/* 1. Header with Actions */}
+    <div className="space-y-4 pb-12 text-slate-800">
+      {/* 1. Header with Title and Top Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
             Master Data
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-500 mt-0.5">
             Manage import, export and shipment records.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {/* Add New Button */}
           <button
-            onClick={handleOpenAddModal}
+            onClick={handleScrollToAdd}
             className="flex items-center gap-1.5 bg-[#00897B] hover:bg-[#00796B] text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
           >
             <Plus size={16} />
@@ -678,11 +661,8 @@ export default function MasterData() {
 
           {/* Bulk Upload CSV Button */}
           <button
-            onClick={() => {
-              setUploadedFile(null);
-              setShowBulkModal(true);
-            }}
-            className="flex items-center gap-2 border border-gray-300 hover:border-[#00897B] text-gray-700 hover:text-[#00897B] bg-white hover:bg-teal-50/50 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
+            onClick={handleScrollToBulk}
+            className="flex items-center gap-1.5 border border-[#00897B] text-[#00897B] hover:bg-teal-50/70 bg-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
           >
             <Upload size={15} />
             <span>Bulk Upload CSV</span>
@@ -690,16 +670,16 @@ export default function MasterData() {
         </div>
       </div>
 
-      {/* 2. Top Filter Bar Card */}
-      <div className="bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 shadow-xs">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
-          {/* HS Code / Product / ID Search */}
+      {/* 2. Top Filter Bar Card (Single Horizontal Row) */}
+      <div className="bg-white rounded-xl border border-gray-200/90 p-3.5 sm:p-4 shadow-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2.5 items-end">
+          {/* HS Code / Product / ID */}
           <div className="lg:col-span-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               HS Code / Product / ID
             </label>
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={filterInputs.search}
@@ -710,24 +690,24 @@ export default function MasterData() {
                   if (e.key === "Enter") handleApplyFilters();
                 }}
                 placeholder="Search HS code, product or ID..."
-                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all"
+                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B]"
               />
             </div>
           </div>
 
           {/* Origin Country */}
           <div>
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Origin Country
             </label>
             <div className="relative">
-              <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Globe className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.originCountry}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, originCountry: e.target.value })
                 }
-                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
+                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueOrigins.map((country, i) => (
                   <option key={i} value={country}>
@@ -735,27 +715,23 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
           {/* Destination */}
           <div>
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Destination
             </label>
             <div className="relative">
-              <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Globe className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.destinationCountry}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, destinationCountry: e.target.value })
                 }
-                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
+                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueDests.map((dest, i) => (
                   <option key={i} value={dest}>
@@ -763,27 +739,23 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
           {/* Importer */}
           <div>
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Importer
             </label>
             <div className="relative">
-              <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Building2 className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.importer}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, importer: e.target.value })
                 }
-                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
+                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueImporters.map((imp, i) => (
                   <option key={i} value={imp}>
@@ -791,27 +763,23 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
           {/* Exporter */}
           <div>
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Exporter
             </label>
             <div className="relative">
-              <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Building2 className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.exporter}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, exporter: e.target.value })
                 }
-                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
+                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueExporters.map((exp, i) => (
                   <option key={i} value={exp}>
@@ -819,27 +787,23 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
-          {/* Port of Loading & Filter Action Buttons */}
+          {/* Port of Loading */}
           <div>
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Port of Loading
             </label>
             <div className="relative">
-              <Anchor className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Anchor className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.portOfLoading}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, portOfLoading: e.target.value })
                 }
-                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
+                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniquePorts.map((port, i) => (
                   <option key={i} value={port}>
@@ -847,36 +811,36 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
-        </div>
 
-        {/* Buttons Row: Apply Filters & Reset */}
-        <div className="flex items-center justify-end gap-2.5 mt-3 pt-3 border-t border-gray-100">
-          <button
-            onClick={handleApplyFilters}
-            className="bg-[#00897B] hover:bg-[#00796B] text-white text-xs font-semibold px-5 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
-          >
-            Apply Filters
-          </button>
-          <button
-            onClick={handleResetFilters}
-            className="border border-gray-300 hover:border-teal-600 text-gray-700 hover:text-teal-700 text-xs font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 hover:bg-teal-50/50 cursor-pointer"
-          >
-            <RotateCcw size={13} />
-            <span>Reset</span>
-          </button>
+          {/* Apply Filters Button */}
+          <div>
+            <button
+              onClick={handleApplyFilters}
+              className="w-full h-[36px] bg-[#00897B] hover:bg-[#00796B] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs cursor-pointer flex items-center justify-center"
+            >
+              Apply Filters
+            </button>
+          </div>
+
+          {/* Reset Button */}
+          <div>
+            <button
+              onClick={handleResetFilters}
+              className="w-full h-[36px] border border-[#00897B] text-[#00897B] hover:bg-teal-50/60 bg-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <RotateCcw size={13} />
+              <span>Reset</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 3. Controls Row above table (Records per page & Columns toggle) */}
-      <div className="flex items-center justify-between">
-        {/* Records Per Page Dropdown */}
+      {/* 3. Controls Bar: Records selector & Columns toggle */}
+      <div className="flex items-center justify-between pt-1">
+        {/* Records Dropdown */}
         <div className="relative inline-block">
           <select
             value={pageSize}
@@ -886,16 +850,12 @@ export default function MasterData() {
             }}
             className="bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none shadow-xs cursor-pointer"
           >
-            <option value={5}>5 records</option>
+            <option value={6}>6 records</option>
             <option value={10}>10 records</option>
             <option value={20}>20 records</option>
             <option value={50}>50 records</option>
           </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+          <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         </div>
 
         {/* Columns Toggle Dropdown */}
@@ -904,11 +864,9 @@ export default function MasterData() {
             onClick={() => setShowColumnsDropdown((prev) => !prev)}
             className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-medium rounded-lg px-3 py-1.5 shadow-xs transition-colors cursor-pointer"
           >
-            <Columns size={14} className="text-gray-500" />
+            <LayoutGrid size={14} className="text-gray-500" />
             <span>Columns</span>
-            <svg className="w-3.5 h-3.5 text-gray-400 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-            </svg>
+            <ChevronDown size={14} className="text-gray-400" />
           </button>
 
           {showColumnsDropdown && (
@@ -941,180 +899,155 @@ export default function MasterData() {
         </div>
       </div>
 
-      {/* 4. Data Table */}
+      {/* 4. Trade Records Table */}
       <div className="bg-white rounded-xl border border-gray-200/90 shadow-xs overflow-hidden">
-        {paginatedRecords.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 space-y-3">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto text-gray-400">
-              <FileText size={22} />
-            </div>
-            <p className="text-sm font-semibold text-gray-800">No records found</p>
-            <p className="text-xs text-gray-400 max-w-sm mx-auto">
-              No master data records match your current filter criteria. Try resetting filters or adding a new record.
-            </p>
-            <button
-              onClick={handleResetFilters}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#00897B] text-white rounded-lg text-xs font-semibold hover:bg-[#00796B] transition-colors cursor-pointer"
-            >
-              <RotateCcw size={13} /> Reset Filters
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                  {visibleColumns.hsCode && <th className="py-3.5 px-3.5 whitespace-nowrap">HS CODE</th>}
-                  {visibleColumns.description && <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[200px]">PRODUCT DESCRIPTION</th>}
-                  {visibleColumns.importer && <th className="py-3.5 px-3.5 whitespace-nowrap">IMPORTER</th>}
-                  {visibleColumns.exporter && <th className="py-3.5 px-3.5 whitespace-nowrap">EXPORTER</th>}
-                  {visibleColumns.originCountry && <th className="py-3.5 px-3.5 whitespace-nowrap">ORIGIN</th>}
-                  {visibleColumns.destinationCountry && <th className="py-3.5 px-3.5 whitespace-nowrap">DESTINATION</th>}
-                  {visibleColumns.portOfLoading && <th className="py-3.5 px-3.5 whitespace-nowrap">PORT OF LOADING</th>}
-                  {visibleColumns.portOfDischarge && <th className="py-3.5 px-3.5 whitespace-nowrap">PORT OF DISCHARGE</th>}
-                  {visibleColumns.shipDate && <th className="py-3.5 px-3.5 whitespace-nowrap">SHIP DATE</th>}
-                  {visibleColumns.arrivalDate && <th className="py-3.5 px-3.5 whitespace-nowrap">ARRIVAL DATE</th>}
-                  {visibleColumns.value && <th className="py-3.5 px-3.5 whitespace-nowrap font-bold text-gray-700">VALUE (INR)</th>}
-                  {visibleColumns.actions && <th className="py-3.5 px-3.5 text-center whitespace-nowrap">ACTIONS</th>}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                {visibleColumns.hsCode && <th className="py-3 px-3.5 whitespace-nowrap">HS CODE</th>}
+                {visibleColumns.description && <th className="py-3 px-3.5 whitespace-nowrap min-w-[200px]">PRODUCT DESCRIPTION</th>}
+                {visibleColumns.importer && <th className="py-3 px-3.5 whitespace-nowrap">IMPORTER</th>}
+                {visibleColumns.exporter && <th className="py-3 px-3.5 whitespace-nowrap">EXPORTER</th>}
+                {visibleColumns.originCountry && <th className="py-3 px-3.5 whitespace-nowrap">ORIGIN</th>}
+                {visibleColumns.destinationCountry && <th className="py-3 px-3.5 whitespace-nowrap">DESTINATION</th>}
+                {visibleColumns.portOfLoading && <th className="py-3 px-3.5 whitespace-nowrap">PORT OF LOADING</th>}
+                {visibleColumns.portOfDischarge && <th className="py-3 px-3.5 whitespace-nowrap">PORT OF DISCHARGE</th>}
+                {visibleColumns.shipDate && <th className="py-3 px-3.5 whitespace-nowrap">SHIP DATE</th>}
+                {visibleColumns.arrivalDate && <th className="py-3 px-3.5 whitespace-nowrap">ARRIVAL DATE</th>}
+                {visibleColumns.value && <th className="py-3 px-3.5 whitespace-nowrap font-bold text-gray-800">VALUE (INR)</th>}
+                {visibleColumns.actions && <th className="py-3 px-3.5 text-center whitespace-nowrap">ACTIONS</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {paginatedRecords.map((row) => (
+                <tr
+                  key={row._id}
+                  className="hover:bg-teal-50/20 transition-colors text-gray-700"
+                >
+                  {/* HS Code */}
+                  {visibleColumns.hsCode && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap font-medium text-gray-900">
+                      {row.hsCode}
+                    </td>
+                  )}
+
+                  {/* Product Description */}
+                  {visibleColumns.description && (
+                    <td className="py-3.5 px-3.5 font-medium text-gray-800">
+                      {row.description}
+                    </td>
+                  )}
+
+                  {/* Importer */}
+                  {visibleColumns.importer && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                      {row.importer}
+                    </td>
+                  )}
+
+                  {/* Exporter */}
+                  {visibleColumns.exporter && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                      {row.exporter}
+                    </td>
+                  )}
+
+                  {/* Origin with Flag */}
+                  {visibleColumns.originCountry && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap">
+                      <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
+                        <ReactCountryFlag
+                          countryCode={countryCodes[row.originCountry] || ""}
+                          svg
+                          style={{ width: "18px", height: "13px" }}
+                        />
+                      </span>
+                      <span className="text-gray-700 font-medium align-middle">
+                        {row.originCountry}
+                      </span>
+                    </td>
+                  )}
+
+                  {/* Destination with Flag */}
+                  {visibleColumns.destinationCountry && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap">
+                      <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
+                        <ReactCountryFlag
+                          countryCode={countryCodes[row.destinationCountry] || ""}
+                          svg
+                          style={{ width: "18px", height: "13px" }}
+                        />
+                      </span>
+                      <span className="text-gray-700 font-medium align-middle">
+                        {row.destinationCountry}
+                      </span>
+                    </td>
+                  )}
+
+                  {/* Port of Loading */}
+                  {visibleColumns.portOfLoading && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                      {row.portOfLoading}
+                    </td>
+                  )}
+
+                  {/* Port of Discharge */}
+                  {visibleColumns.portOfDischarge && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                      {row.portOfDischarge}
+                    </td>
+                  )}
+
+                  {/* Ship Date */}
+                  {visibleColumns.shipDate && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                      {formatDate(row.shipDate)}
+                    </td>
+                  )}
+
+                  {/* Arrival Date */}
+                  {visibleColumns.arrivalDate && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                      {formatDate(row.arrivalDate)}
+                    </td>
+                  )}
+
+                  {/* Value (INR) */}
+                  {visibleColumns.value && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap font-bold text-gray-900">
+                      {formatValueINR(row.value)}
+                    </td>
+                  )}
+
+                  {/* Actions (Eye & Pencil) */}
+                  {visibleColumns.actions && (
+                    <td className="py-3.5 px-3.5 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setViewingRecord(row)}
+                          className="p-1 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded transition-colors cursor-pointer"
+                          title="View Details"
+                        >
+                          <Eye size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleEditClick(row)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                          title="Edit Record"
+                        >
+                          <Edit2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginatedRecords.map((row) => (
-                  <tr
-                    key={row._id}
-                    className="hover:bg-teal-50/30 transition-colors text-gray-700 group"
-                  >
-                    {/* HS Code */}
-                    {visibleColumns.hsCode && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap font-medium text-gray-900">
-                        {row.hsCode}
-                      </td>
-                    )}
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-                    {/* Product Description */}
-                    {visibleColumns.description && (
-                      <td className="py-3.5 px-3.5 font-medium text-gray-800">
-                        {row.description}
-                      </td>
-                    )}
-
-                    {/* Importer */}
-                    {visibleColumns.importer && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
-                        {row.importer}
-                      </td>
-                    )}
-
-                    {/* Exporter */}
-                    {visibleColumns.exporter && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
-                        {row.exporter}
-                      </td>
-                    )}
-
-                    {/* Origin Country with Flag */}
-                    {visibleColumns.originCountry && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap">
-                        <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
-                          <ReactCountryFlag
-                            countryCode={countryCodes[row.originCountry] || ""}
-                            svg
-                            style={{ width: "18px", height: "13px" }}
-                          />
-                        </span>
-                        <span className="text-gray-700 font-medium align-middle">
-                          {row.originCountry}
-                        </span>
-                      </td>
-                    )}
-
-                    {/* Destination Country with Flag */}
-                    {visibleColumns.destinationCountry && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap">
-                        <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
-                          <ReactCountryFlag
-                            countryCode={countryCodes[row.destinationCountry] || ""}
-                            svg
-                            style={{ width: "18px", height: "13px" }}
-                          />
-                        </span>
-                        <span className="text-gray-700 font-medium align-middle">
-                          {row.destinationCountry}
-                        </span>
-                      </td>
-                    )}
-
-                    {/* Port of Loading */}
-                    {visibleColumns.portOfLoading && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
-                        {row.portOfLoading}
-                      </td>
-                    )}
-
-                    {/* Port of Discharge */}
-                    {visibleColumns.portOfDischarge && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
-                        {row.portOfDischarge}
-                      </td>
-                    )}
-
-                    {/* Ship Date */}
-                    {visibleColumns.shipDate && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
-                        {formatDate(row.shipDate)}
-                      </td>
-                    )}
-
-                    {/* Arrival Date */}
-                    {visibleColumns.arrivalDate && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
-                        {formatDate(row.arrivalDate)}
-                      </td>
-                    )}
-
-                    {/* Value (INR) */}
-                    {visibleColumns.value && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap font-bold text-gray-900">
-                        {formatValueINR(row.value)}
-                      </td>
-                    )}
-
-                    {/* Actions */}
-                    {visibleColumns.actions && (
-                      <td className="py-3.5 px-3.5 whitespace-nowrap text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => setViewingRecord(row)}
-                            className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-colors cursor-pointer"
-                            title="View Details"
-                          >
-                            <Eye size={15} />
-                          </button>
-                          <button
-                            onClick={() => handleOpenEditModal(row)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
-                            title="Edit Record"
-                          >
-                            <Edit2 size={15} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRecord(row._id)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
-                            title="Delete Record"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* 5. Table Footer / Pagination */}
+        {/* Table Pagination Footer */}
         <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
           <p className="text-xs text-gray-500">
             Showing {totalRecords === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + pageSize, totalRecords)} of {totalRecords} records
@@ -1125,9 +1058,9 @@ export default function MasterData() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs"
             >
-              <ChevronLeft size={16} />
+              &lt;
             </button>
 
             {/* Page Number Buttons */}
@@ -1149,241 +1082,279 @@ export default function MasterData() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-1"
+              className="px-2.5 h-7 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-0.5"
             >
               <span>Next</span>
-              <ChevronRight size={14} />
+              <span>&gt;</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* 6. Add / Edit Record Modal (Matches screenshot bottom-left) */}
-      {showAddEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-base font-bold text-gray-900">
-                {editingRecord ? "Edit Record" : "Add New Record"}
-              </h3>
-              <button
-                onClick={() => setShowAddEditModal(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
+      {/* 5. The Two Cards Shown Side-by-Side Below the Table (Matching Screenshot) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-1">
+        {/* Card 1: Add New Record (Left) */}
+        <div
+          ref={addCardRef}
+          id="add-record-card"
+          className="bg-white rounded-xl border border-gray-200/90 shadow-xs p-5 sm:p-6 relative flex flex-col justify-between"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
+            <h3 className="text-base font-bold text-gray-900">
+              {editingRecord ? `Edit Record (${editingRecord._id})` : "Add New Record"}
+            </h3>
+            <button
+              type="button"
+              onClick={handleCancelForm}
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Form Fields */}
+          <form onSubmit={handleSaveRecord} className="space-y-3.5">
+            {/* Row 1: HS Code & Product Description */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  HS Code <span className="text-red-500">*</span>
+                </label>
+                <input
+                  ref={hsInputRef}
+                  type="text"
+                  required
+                  value={recordForm.hsCode}
+                  onChange={(e) => setRecordForm({ ...recordForm, hsCode: e.target.value })}
+                  placeholder="Enter HS code"
+                  className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Product Description <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={recordForm.description}
+                  onChange={(e) => setRecordForm({ ...recordForm, description: e.target.value })}
+                  placeholder="Enter product description"
+                  className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                />
+              </div>
             </div>
 
-            {/* Modal Body Form */}
-            <form onSubmit={handleSaveRecord} className="p-6 overflow-y-auto space-y-4">
-              {/* Row 1: HS Code & Product Description */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    HS Code <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={recordForm.hsCode}
-                    onChange={(e) => setRecordForm({ ...recordForm, hsCode: e.target.value })}
-                    placeholder="Enter HS code"
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Product Description <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={recordForm.description}
-                    onChange={(e) => setRecordForm({ ...recordForm, description: e.target.value })}
-                    placeholder="Enter product description"
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-              </div>
-
-              {/* Row 2: Importer & Exporter */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Importer <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
+            {/* Row 2: Importer & Exporter */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Importer <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
                     value={recordForm.importer}
                     onChange={(e) => setRecordForm({ ...recordForm, importer: e.target.value })}
-                    placeholder="Select or enter importer"
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Exporter <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={recordForm.exporter}
-                    onChange={(e) => setRecordForm({ ...recordForm, exporter: e.target.value })}
-                    placeholder="Select or enter exporter"
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
+                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                  >
+                    <option value="">Select importer</option>
+                    {uniqueImporters.filter(i => i !== "All Importers").map((imp, idx) => (
+                      <option key={idx} value={imp}>{imp}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
               </div>
 
-              {/* Row 3: Origin & Destination Country */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Origin Country <span className="text-red-500">*</span>
-                  </label>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Exporter <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={recordForm.exporter}
+                    onChange={(e) => setRecordForm({ ...recordForm, exporter: e.target.value })}
+                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                  >
+                    <option value="">Select exporter</option>
+                    {uniqueExporters.filter(e => e !== "All Exporters").map((exp, idx) => (
+                      <option key={idx} value={exp}>{exp}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: Origin & Destination Country */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Origin Country <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
                   <select
                     value={recordForm.originCountry}
                     onChange={(e) => setRecordForm({ ...recordForm, originCountry: e.target.value })}
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
                   >
                     <option value="">Select origin country</option>
                     {Object.keys(countryCodes).map((c, i) => (
                       <option key={i} value={c}>{c}</option>
                     ))}
                   </select>
+                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Destination Country <span className="text-red-500">*</span>
-                  </label>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Destination Country <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
                   <select
                     value={recordForm.destinationCountry}
                     onChange={(e) => setRecordForm({ ...recordForm, destinationCountry: e.target.value })}
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
                   >
                     <option value="">Select destination country</option>
                     {Object.keys(countryCodes).map((c, i) => (
                       <option key={i} value={c}>{c}</option>
                     ))}
                   </select>
+                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
               </div>
+            </div>
 
-              {/* Row 4: Port of Loading & Port of Discharge */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Port of Loading <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
+            {/* Row 4: Port of Loading & Port of Discharge */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Port of Loading <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
                     value={recordForm.portOfLoading}
                     onChange={(e) => setRecordForm({ ...recordForm, portOfLoading: e.target.value })}
-                    placeholder="Select or enter port of loading"
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Port of Discharge <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={recordForm.portOfDischarge}
-                    onChange={(e) => setRecordForm({ ...recordForm, portOfDischarge: e.target.value })}
-                    placeholder="Select or enter port of discharge"
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                  />
+                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                  >
+                    <option value="">Select port of loading</option>
+                    {uniquePorts.filter(p => p !== "All Ports").map((p, idx) => (
+                      <option key={idx} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
               </div>
 
-              {/* Row 5: Ship Date, Arrival Date & Value */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Ship Date <span className="text-red-500">*</span>
-                  </label>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Port of Discharge <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={recordForm.portOfDischarge}
+                    onChange={(e) => setRecordForm({ ...recordForm, portOfDischarge: e.target.value })}
+                    className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
+                  >
+                    <option value="">Select port of discharge</option>
+                    {Array.from(new Set(records.map(r => r.portOfDischarge))).map((p, idx) => (
+                      <option key={idx} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Row 5: Ship Date, Arrival Date & Value */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Ship Date <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
                   <input
                     type="date"
                     required
                     value={recordForm.shipDate}
                     onChange={(e) => setRecordForm({ ...recordForm, shipDate: e.target.value })}
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Arrival Date <span className="text-red-500">*</span>
-                  </label>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Arrival Date <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
                   <input
                     type="date"
                     required
                     value={recordForm.arrivalDate}
                     onChange={(e) => setRecordForm({ ...recordForm, arrivalDate: e.target.value })}
-                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Value (INR) <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">₹</span>
-                    <input
-                      type="number"
-                      required
-                      value={recordForm.value}
-                      onChange={(e) => setRecordForm({ ...recordForm, value: e.target.value })}
-                      placeholder="Enter value"
-                      className="w-full text-xs pl-7 pr-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Value (INR) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">₹</span>
+                  <input
+                    type="number"
+                    required
+                    value={recordForm.value}
+                    onChange={(e) => setRecordForm({ ...recordForm, value: e.target.value })}
+                    placeholder="Enter value"
+                    className="w-full h-[36px] text-xs pl-6 pr-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
                 </div>
               </div>
+            </div>
 
-              {/* Footer Buttons */}
-              <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setShowAddEditModal(false)}
-                  className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
-                >
-                  Save Record
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Bottom Buttons */}
+            <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={handleCancelForm}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
+              >
+                Save Record
+              </button>
+            </div>
+          </form>
         </div>
-      )}
 
-      {/* 7. Bulk Upload CSV Modal (Matches screenshot bottom-right) */}
-      {showBulkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-gray-100">
-            {/* Header */}
-            <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between">
+        {/* Card 2: Bulk Upload CSV (Right) */}
+        <div
+          ref={bulkCardRef}
+          id="bulk-upload-card"
+          className="bg-white rounded-xl border border-gray-200/90 shadow-xs p-5 sm:p-6 relative flex flex-col justify-between"
+        >
+          {/* Header */}
+          <div>
+            <div className="flex items-start justify-between pb-3 border-b border-gray-100">
               <div>
                 <h3 className="text-base font-bold text-gray-900">Bulk Upload CSV</h3>
                 <p className="text-xs text-gray-500 mt-0.5">Import multiple trade records at once.</p>
               </div>
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={handleDownloadTemplate}
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00897B] hover:text-[#00796B] transition-colors cursor-pointer"
                   title="Download sample CSV template"
@@ -1392,7 +1363,8 @@ export default function MasterData() {
                   <span>Download CSV Template</span>
                 </button>
                 <button
-                  onClick={() => setShowBulkModal(false)}
+                  type="button"
+                  onClick={() => setUploadedFile(null)}
                   className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <X size={18} />
@@ -1400,77 +1372,80 @@ export default function MasterData() {
               </div>
             </div>
 
-            {/* Body */}
-            <div className="p-6 space-y-4">
-              {/* Drag & Drop Area */}
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDragging(true);
+            {/* Drag & Drop Dropzone */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                  setUploadedFile(e.dataTransfer.files[0]);
+                }
+              }}
+              onClick={() => document.getElementById("csv-file-input-card").click()}
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center my-4 ${
+                isDragging
+                  ? "border-[#00897B] bg-teal-50/50"
+                  : "border-[#80cbc4] hover:border-[#00897B] bg-[#e0f2f1]/25 hover:bg-[#e0f2f1]/40"
+              }`}
+            >
+              <div className="w-12 h-12 rounded-full bg-teal-100/70 text-[#00897B] flex items-center justify-center mb-2.5">
+                <UploadCloud size={28} />
+              </div>
+              <p className="text-xs font-bold text-gray-800">
+                {uploadedFile ? uploadedFile.name : "Drag & drop your CSV file here"}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                or <span className="text-[#00897B] font-semibold underline">browse files</span>
+              </p>
+              <span className="text-[10px] text-gray-400 mt-1.5">
+                .csv files only
+              </span>
+              <input
+                id="csv-file-input-card"
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setUploadedFile(e.target.files[0]);
+                  }
                 }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleFileDrop}
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
-                  isDragging
-                    ? "border-[#00897B] bg-teal-50/50"
-                    : "border-teal-200 hover:border-teal-400 bg-teal-50/20"
-                }`}
-                onClick={() => document.getElementById("csv-file-input").click()}
-              >
-                <div className="w-12 h-12 rounded-full bg-teal-100/70 text-[#00897B] flex items-center justify-center mb-3">
-                  <UploadCloud size={26} />
-                </div>
-                <p className="text-sm font-bold text-gray-800">
-                  {uploadedFile ? uploadedFile.name : "Drag & drop your CSV file here"}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  or <span className="text-[#00897B] font-semibold underline">browse files</span>
-                </p>
-                <span className="text-[10px] text-gray-400 mt-2 bg-white px-2 py-0.5 rounded-full border border-gray-200">
-                  .csv files only
-                </span>
-                <input
-                  id="csv-file-input"
-                  type="file"
-                  accept=".csv"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      setUploadedFile(e.target.files[0]);
-                    }
-                  }}
-                />
-              </div>
-
-              {/* Informational Alert Box */}
-              <div className="bg-sky-50 border border-sky-100 rounded-xl p-3 flex items-center gap-2.5 text-sky-800 text-xs">
-                <Info size={16} className="text-sky-600 shrink-0" />
-                <span>Match the template columns before uploading.</span>
-              </div>
+              />
             </div>
 
-            {/* Footer */}
-            <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setShowBulkModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleValidateCSV}
-                className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
-              >
-                Validate & Preview
-              </button>
+            {/* Informational Box */}
+            <div className="bg-[#e1f5fe]/80 border border-[#b3e5fc] rounded-xl p-3 flex items-center gap-2.5 text-[#0288d1] text-xs mb-4">
+              <Info size={16} className="shrink-0 text-[#0288d1]" />
+              <span>Match the template columns before uploading.</span>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* 8. View Record Details Modal (When clicking Eye icon) */}
+          {/* Footer */}
+          <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={() => setUploadedFile(null)}
+              className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleValidateCSV}
+              className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
+            >
+              Validate & Preview
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. View Record Details Modal (When clicking Eye icon) */}
       {viewingRecord && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-100">
