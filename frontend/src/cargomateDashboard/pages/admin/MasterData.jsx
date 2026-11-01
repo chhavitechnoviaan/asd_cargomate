@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import ReactCountryFlag from "react-country-flag";
 import Swal from "sweetalert2";
 import {
@@ -227,11 +227,6 @@ const allColumns = [
 export default function MasterData() {
   const [records, setRecords] = useState(initialShipmentRecords);
 
-  // References for smooth scrolling
-  const addCardRef = useRef(null);
-  const bulkCardRef = useRef(null);
-  const hsInputRef = useRef(null);
-
   // Filter form states
   const [filterInputs, setFilterInputs] = useState({
     search: "",
@@ -259,15 +254,11 @@ export default function MasterData() {
   );
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
 
-  // View Modal state
+  // Modal States
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
   const [viewingRecord, setViewingRecord] = useState(null);
-
-  // Editing state
   const [editingRecord, setEditingRecord] = useState(null);
-
-  // Cards visibility (can be closed via X or reopened via top buttons)
-  const [showAddCard, setShowAddCard] = useState(true);
-  const [showBulkCard, setShowBulkCard] = useState(true);
 
   // Form State for "Add New Record" / "Edit Record"
   const [recordForm, setRecordForm] = useState({
@@ -418,9 +409,8 @@ export default function MasterData() {
     setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Scroll to Add New Record
-  const handleScrollToAdd = () => {
-    setShowAddCard(true);
+  // Open Add Record Modal
+  const handleOpenAddModal = () => {
     setEditingRecord(null);
     setRecordForm({
       hsCode: "",
@@ -436,23 +426,11 @@ export default function MasterData() {
       value: "",
       status: "In Transit",
     });
-    setTimeout(() => {
-      addCardRef.current?.scrollIntoView({ behavior: "smooth" });
-      hsInputRef.current?.focus();
-    }, 100);
+    setShowAddModal(true);
   };
 
-  // Scroll to Bulk Upload CSV
-  const handleScrollToBulk = () => {
-    setShowBulkCard(true);
-    setTimeout(() => {
-      bulkCardRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  };
-
-  // Handle Edit click from table row
+  // Open Edit Modal
   const handleEditClick = (rec) => {
-    setShowAddCard(true);
     setEditingRecord(rec);
     setRecordForm({
       hsCode: rec.hsCode || "",
@@ -468,29 +446,7 @@ export default function MasterData() {
       value: rec.value || "",
       status: rec.status || "In Transit",
     });
-    setTimeout(() => {
-      addCardRef.current?.scrollIntoView({ behavior: "smooth" });
-      hsInputRef.current?.focus();
-    }, 100);
-  };
-
-  // Reset form
-  const handleCancelForm = () => {
-    setEditingRecord(null);
-    setRecordForm({
-      hsCode: "",
-      description: "",
-      importer: "",
-      exporter: "",
-      originCountry: "",
-      destinationCountry: "",
-      portOfLoading: "",
-      portOfDischarge: "",
-      shipDate: "",
-      arrivalDate: "",
-      value: "",
-      status: "In Transit",
-    });
+    setShowAddModal(true);
   };
 
   // Save Record (Add or Update)
@@ -520,7 +476,6 @@ export default function MasterData() {
         timer: 1500,
         showConfirmButton: false,
       });
-      setEditingRecord(null);
     } else {
       const newId = `SHIP${String(records.length + 1).padStart(3, "0")}`;
       const newRec = {
@@ -538,7 +493,8 @@ export default function MasterData() {
       });
     }
 
-    handleCancelForm();
+    setShowAddModal(false);
+    setEditingRecord(null);
   };
 
   // Download CSV Template
@@ -630,6 +586,7 @@ export default function MasterData() {
 
         setRecords((prev) => [...newRecords, ...prev]);
         setUploadedFile(null);
+        setShowBulkModal(false);
 
         Swal.fire({
           icon: "success",
@@ -650,11 +607,11 @@ export default function MasterData() {
   };
 
   return (
-    <div className="space-y-4 pb-28 text-slate-800 max-w-full">
+    <div className="w-full max-w-full space-y-4 pb-12 text-slate-800">
       {/* 1. Header with Title and Top Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
             Master Data
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
@@ -662,11 +619,11 @@ export default function MasterData() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 shrink-0">
           {/* Add New Button */}
           <button
-            onClick={handleScrollToAdd}
-            className="flex items-center gap-1.5 bg-[#00897B] hover:bg-[#00796B] text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-1.5 bg-[#00897B] hover:bg-[#00796B] text-white text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer"
           >
             <Plus size={16} />
             <span>Add New</span>
@@ -674,8 +631,11 @@ export default function MasterData() {
 
           {/* Bulk Upload CSV Button */}
           <button
-            onClick={handleScrollToBulk}
-            className="flex items-center gap-1.5 border border-[#00897B] text-[#00897B] hover:bg-teal-50/70 bg-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
+            onClick={() => {
+              setUploadedFile(null);
+              setShowBulkModal(true);
+            }}
+            className="flex items-center gap-1.5 border border-[#00897B] text-[#00897B] hover:bg-teal-50/70 bg-white text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer"
           >
             <Upload size={15} />
             <span>Bulk Upload CSV</span>
@@ -683,11 +643,11 @@ export default function MasterData() {
         </div>
       </div>
 
-      {/* 2. Top Filter Bar Card (Responsive Single/Wrap Layout) */}
-      <div className="bg-white rounded-xl border border-gray-200/90 p-3.5 sm:p-4 shadow-xs">
-        <div className="flex flex-wrap xl:flex-nowrap items-end gap-2.5">
+      {/* 2. Top Filter Bar Card (Compact Single-Row Design) */}
+      <div className="bg-white rounded-xl border border-gray-200/90 p-3 shadow-xs w-full overflow-hidden">
+        <div className="flex flex-wrap xl:flex-nowrap items-end gap-2 w-full">
           {/* HS Code / Product / ID */}
-          <div className="flex-1 min-w-[170px]">
+          <div className="flex-1 min-w-[150px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               HS Code / Product / ID
             </label>
@@ -703,24 +663,24 @@ export default function MasterData() {
                   if (e.key === "Enter") handleApplyFilters();
                 }}
                 placeholder="Search HS code, product or ID..."
-                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B]"
+                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B]"
               />
             </div>
           </div>
 
           {/* Origin Country */}
-          <div className="w-full sm:w-[130px] lg:w-[135px]">
+          <div className="w-[110px] sm:w-[120px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Origin Country
             </label>
             <div className="relative">
-              <Globe className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Globe className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.originCountry}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, originCountry: e.target.value })
                 }
-                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueOrigins.map((country, i) => (
                   <option key={i} value={country}>
@@ -728,23 +688,23 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
           {/* Destination */}
-          <div className="w-full sm:w-[130px] lg:w-[135px]">
+          <div className="w-[110px] sm:w-[120px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Destination
             </label>
             <div className="relative">
-              <Globe className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Globe className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.destinationCountry}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, destinationCountry: e.target.value })
                 }
-                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueDests.map((dest, i) => (
                   <option key={i} value={dest}>
@@ -752,23 +712,23 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
           {/* Importer */}
-          <div className="w-full sm:w-[130px] lg:w-[135px]">
+          <div className="w-[110px] sm:w-[120px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Importer
             </label>
             <div className="relative">
-              <Building2 className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Building2 className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.importer}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, importer: e.target.value })
                 }
-                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueImporters.map((imp, i) => (
                   <option key={i} value={imp}>
@@ -776,23 +736,23 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
           {/* Exporter */}
-          <div className="w-full sm:w-[130px] lg:w-[135px]">
+          <div className="w-[110px] sm:w-[120px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Exporter
             </label>
             <div className="relative">
-              <Building2 className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Building2 className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.exporter}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, exporter: e.target.value })
                 }
-                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueExporters.map((exp, i) => (
                   <option key={i} value={exp}>
@@ -800,23 +760,23 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
           {/* Port of Loading */}
-          <div className="w-full sm:w-[130px] lg:w-[135px]">
+          <div className="w-[110px] sm:w-[120px]">
             <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
               Port of Loading
             </label>
             <div className="relative">
-              <Anchor className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Anchor className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
                 value={filterInputs.portOfLoading}
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, portOfLoading: e.target.value })
                 }
-                className="w-full h-[36px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-6 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniquePorts.map((port, i) => (
                   <option key={i} value={port}>
@@ -824,23 +784,23 @@ export default function MasterData() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
-          {/* Action Buttons: Apply & Reset */}
-          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+          {/* Buttons: Apply & Reset */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={handleApplyFilters}
-              className="h-[36px] px-4 bg-[#00897B] hover:bg-[#00796B] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs cursor-pointer flex items-center justify-center whitespace-nowrap"
+              className="h-[34px] px-3.5 bg-[#00897B] hover:bg-[#00796B] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs cursor-pointer flex items-center justify-center whitespace-nowrap"
             >
               Apply Filters
             </button>
             <button
               onClick={handleResetFilters}
-              className="h-[36px] px-3.5 border border-[#00897B] text-[#00897B] hover:bg-teal-50/60 bg-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="h-[34px] px-3 border border-[#00897B] text-[#00897B] hover:bg-teal-50/60 bg-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
             >
-              <RotateCcw size={13} />
+              <RotateCcw size={12} />
               <span>Reset</span>
             </button>
           </div>
@@ -848,7 +808,7 @@ export default function MasterData() {
       </div>
 
       {/* 3. Controls Bar: Records selector & Columns toggle */}
-      <div className="flex items-center justify-between pt-1">
+      <div className="flex items-center justify-between">
         {/* Records Dropdown */}
         <div className="relative inline-block">
           <select
@@ -857,25 +817,25 @@ export default function MasterData() {
               setPageSize(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className="bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none shadow-xs cursor-pointer"
+            className="bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg px-2.5 py-1.5 pr-6 focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none shadow-xs cursor-pointer"
           >
             <option value={6}>6 records</option>
             <option value={10}>10 records</option>
             <option value={20}>20 records</option>
             <option value={50}>50 records</option>
           </select>
-          <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         </div>
 
         {/* Columns Toggle Dropdown */}
         <div className="relative">
           <button
             onClick={() => setShowColumnsDropdown((prev) => !prev)}
-            className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-medium rounded-lg px-3 py-1.5 shadow-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-medium rounded-lg px-2.5 py-1.5 shadow-xs transition-colors cursor-pointer"
           >
-            <LayoutGrid size={14} className="text-gray-500" />
+            <LayoutGrid size={13} className="text-gray-500" />
             <span>Columns</span>
-            <ChevronDown size={14} className="text-gray-400" />
+            <ChevronDown size={13} className="text-gray-400" />
           </button>
 
           {showColumnsDropdown && (
@@ -884,14 +844,14 @@ export default function MasterData() {
                 className="fixed inset-0 z-20"
                 onClick={() => setShowColumnsDropdown(false)}
               />
-              <div className="absolute right-0 mt-1.5 w-52 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-30 space-y-0.5">
-                <p className="text-[11px] font-bold text-gray-400 px-2 py-1 uppercase tracking-wider">
+              <div className="absolute right-0 mt-1.5 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-30 space-y-0.5">
+                <p className="text-[10px] font-bold text-gray-400 px-2 py-1 uppercase tracking-wider">
                   Toggle Columns
                 </p>
                 {allColumns.map((col) => (
                   <label
                     key={col.key}
-                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded-lg text-xs text-gray-700 cursor-pointer select-none"
+                    className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded-lg text-xs text-gray-700 cursor-pointer select-none"
                   >
                     <input
                       type="checkbox"
@@ -908,24 +868,24 @@ export default function MasterData() {
         </div>
       </div>
 
-      {/* 4. Trade Records Table */}
-      <div className="bg-white rounded-xl border border-gray-200/90 shadow-xs">
-        <div className="overflow-x-auto">
+      {/* 4. Trade Records Table Card */}
+      <div className="bg-white rounded-xl border border-gray-200/90 shadow-xs w-full overflow-hidden">
+        <div className="overflow-x-auto w-full">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                {visibleColumns.hsCode && <th className="py-3 px-3.5 whitespace-nowrap">HS CODE</th>}
-                {visibleColumns.description && <th className="py-3 px-3.5 whitespace-nowrap min-w-[200px]">PRODUCT DESCRIPTION</th>}
-                {visibleColumns.importer && <th className="py-3 px-3.5 whitespace-nowrap">IMPORTER</th>}
-                {visibleColumns.exporter && <th className="py-3 px-3.5 whitespace-nowrap">EXPORTER</th>}
-                {visibleColumns.originCountry && <th className="py-3 px-3.5 whitespace-nowrap">ORIGIN</th>}
-                {visibleColumns.destinationCountry && <th className="py-3 px-3.5 whitespace-nowrap">DESTINATION</th>}
-                {visibleColumns.portOfLoading && <th className="py-3 px-3.5 whitespace-nowrap">PORT OF LOADING</th>}
-                {visibleColumns.portOfDischarge && <th className="py-3 px-3.5 whitespace-nowrap">PORT OF DISCHARGE</th>}
-                {visibleColumns.shipDate && <th className="py-3 px-3.5 whitespace-nowrap">SHIP DATE</th>}
-                {visibleColumns.arrivalDate && <th className="py-3 px-3.5 whitespace-nowrap">ARRIVAL DATE</th>}
-                {visibleColumns.value && <th className="py-3 px-3.5 whitespace-nowrap font-bold text-gray-800">VALUE (INR)</th>}
-                {visibleColumns.actions && <th className="py-3 px-3.5 text-center whitespace-nowrap">ACTIONS</th>}
+                {visibleColumns.hsCode && <th className="py-2.5 px-3 whitespace-nowrap">HS CODE</th>}
+                {visibleColumns.description && <th className="py-2.5 px-3 whitespace-nowrap min-w-[170px]">PRODUCT DESCRIPTION</th>}
+                {visibleColumns.importer && <th className="py-2.5 px-3 whitespace-nowrap">IMPORTER</th>}
+                {visibleColumns.exporter && <th className="py-2.5 px-3 whitespace-nowrap">EXPORTER</th>}
+                {visibleColumns.originCountry && <th className="py-2.5 px-3 whitespace-nowrap">ORIGIN</th>}
+                {visibleColumns.destinationCountry && <th className="py-2.5 px-3 whitespace-nowrap">DESTINATION</th>}
+                {visibleColumns.portOfLoading && <th className="py-2.5 px-3 whitespace-nowrap">PORT OF LOADING</th>}
+                {visibleColumns.portOfDischarge && <th className="py-2.5 px-3 whitespace-nowrap">PORT OF DISCHARGE</th>}
+                {visibleColumns.shipDate && <th className="py-2.5 px-3 whitespace-nowrap">SHIP DATE</th>}
+                {visibleColumns.arrivalDate && <th className="py-2.5 px-3 whitespace-nowrap">ARRIVAL DATE</th>}
+                {visibleColumns.value && <th className="py-2.5 px-3 whitespace-nowrap font-bold text-gray-800">VALUE (INR)</th>}
+                {visibleColumns.actions && <th className="py-2.5 px-3 text-center whitespace-nowrap">ACTIONS</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -936,40 +896,40 @@ export default function MasterData() {
                 >
                   {/* HS Code */}
                   {visibleColumns.hsCode && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap font-medium text-gray-900">
+                    <td className="py-3 px-3 whitespace-nowrap font-medium text-gray-900">
                       {row.hsCode}
                     </td>
                   )}
 
                   {/* Product Description */}
                   {visibleColumns.description && (
-                    <td className="py-3.5 px-3.5 font-medium text-gray-800">
+                    <td className="py-3 px-3 font-medium text-gray-800 max-w-[200px] truncate">
                       {row.description}
                     </td>
                   )}
 
                   {/* Importer */}
                   {visibleColumns.importer && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                    <td className="py-3 px-3 whitespace-nowrap text-gray-600 max-w-[140px] truncate">
                       {row.importer}
                     </td>
                   )}
 
                   {/* Exporter */}
                   {visibleColumns.exporter && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                    <td className="py-3 px-3 whitespace-nowrap text-gray-600 max-w-[140px] truncate">
                       {row.exporter}
                     </td>
                   )}
 
                   {/* Origin with Flag */}
                   {visibleColumns.originCountry && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap">
+                    <td className="py-3 px-3 whitespace-nowrap">
                       <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
                         <ReactCountryFlag
                           countryCode={countryCodes[row.originCountry] || ""}
                           svg
-                          style={{ width: "18px", height: "13px" }}
+                          style={{ width: "16px", height: "12px" }}
                         />
                       </span>
                       <span className="text-gray-700 font-medium align-middle">
@@ -980,12 +940,12 @@ export default function MasterData() {
 
                   {/* Destination with Flag */}
                   {visibleColumns.destinationCountry && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap">
+                    <td className="py-3 px-3 whitespace-nowrap">
                       <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
                         <ReactCountryFlag
                           countryCode={countryCodes[row.destinationCountry] || ""}
                           svg
-                          style={{ width: "18px", height: "13px" }}
+                          style={{ width: "16px", height: "12px" }}
                         />
                       </span>
                       <span className="text-gray-700 font-medium align-middle">
@@ -996,43 +956,43 @@ export default function MasterData() {
 
                   {/* Port of Loading */}
                   {visibleColumns.portOfLoading && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                    <td className="py-3 px-3 whitespace-nowrap text-gray-600">
                       {row.portOfLoading}
                     </td>
                   )}
 
                   {/* Port of Discharge */}
                   {visibleColumns.portOfDischarge && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                    <td className="py-3 px-3 whitespace-nowrap text-gray-600">
                       {row.portOfDischarge}
                     </td>
                   )}
 
                   {/* Ship Date */}
                   {visibleColumns.shipDate && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                    <td className="py-3 px-3 whitespace-nowrap text-gray-600">
                       {formatDate(row.shipDate)}
                     </td>
                   )}
 
                   {/* Arrival Date */}
                   {visibleColumns.arrivalDate && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                    <td className="py-3 px-3 whitespace-nowrap text-gray-600">
                       {formatDate(row.arrivalDate)}
                     </td>
                   )}
 
                   {/* Value (INR) */}
                   {visibleColumns.value && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap font-bold text-gray-900">
+                    <td className="py-3 px-3 whitespace-nowrap font-bold text-gray-900">
                       {formatValueINR(row.value)}
                     </td>
                   )}
 
                   {/* Actions (Eye & Pencil) */}
                   {visibleColumns.actions && (
-                    <td className="py-3.5 px-3.5 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="py-3 px-3 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => setViewingRecord(row)}
                           className="p-1 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded transition-colors cursor-pointer"
@@ -1056,13 +1016,13 @@ export default function MasterData() {
           </table>
         </div>
 
-        {/* Table Pagination Footer (Always 100% visible, not hidden inside horizontal scroll) */}
-        <div className="p-3.5 sm:p-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white">
+        {/* Table Pagination Footer */}
+        <div className="p-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white">
           <p className="text-xs text-gray-500">
             Showing {totalRecords === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + pageSize, totalRecords)} of {totalRecords} records
           </p>
 
-          <div className="flex items-center gap-1.5 ml-auto">
+          <div className="flex items-center gap-1.5">
             {/* Prev Button */}
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -1100,295 +1060,259 @@ export default function MasterData() {
         </div>
       </div>
 
-      {/* 5. The Two Cards Shown Below the Table (Stacked on smaller screens, 2-cols on XL) */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pt-2">
-        {/* Card 1: Add New Record (Left) */}
-        {showAddCard && (
-          <div
-            ref={addCardRef}
-            id="add-record-card"
-            className="bg-white rounded-xl border border-gray-200/90 shadow-xs p-5 sm:p-6 relative flex flex-col justify-between"
-          >
+      {/* 5. ADD / EDIT RECORD MODAL (Popup - No Scrolling Down!) */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div>
-              <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 mb-4">
-                <h3 className="text-base font-bold text-gray-900">
-                  {editingRecord ? `Edit Record (${editingRecord._id})` : "Add New Record"}
-                </h3>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">
+                {editingRecord ? `Edit Record (${editingRecord._id})` : "Add New Record"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddModal(false);
+                  setEditingRecord(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveRecord} className="p-5 overflow-y-auto space-y-3.5">
+              {/* Row 1 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    HS Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.hsCode}
+                    onChange={(e) => setRecordForm({ ...recordForm, hsCode: e.target.value })}
+                    placeholder="Enter HS code"
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Product Description <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.description}
+                    onChange={(e) => setRecordForm({ ...recordForm, description: e.target.value })}
+                    placeholder="Enter product description"
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Importer <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.importer}
+                    onChange={(e) => setRecordForm({ ...recordForm, importer: e.target.value })}
+                    placeholder="Select or enter importer"
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Exporter <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.exporter}
+                    onChange={(e) => setRecordForm({ ...recordForm, exporter: e.target.value })}
+                    placeholder="Select or enter exporter"
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Origin Country <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={recordForm.originCountry}
+                    onChange={(e) => setRecordForm({ ...recordForm, originCountry: e.target.value })}
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                  >
+                    <option value="">Select origin country</option>
+                    {Object.keys(countryCodes).map((c, i) => (
+                      <option key={i} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Destination Country <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={recordForm.destinationCountry}
+                    onChange={(e) => setRecordForm({ ...recordForm, destinationCountry: e.target.value })}
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                  >
+                    <option value="">Select destination country</option>
+                    {Object.keys(countryCodes).map((c, i) => (
+                      <option key={i} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 4 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Port of Loading <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.portOfLoading}
+                    onChange={(e) => setRecordForm({ ...recordForm, portOfLoading: e.target.value })}
+                    placeholder="Select or enter port of loading"
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Port of Discharge <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.portOfDischarge}
+                    onChange={(e) => setRecordForm({ ...recordForm, portOfDischarge: e.target.value })}
+                    placeholder="Select or enter port of discharge"
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              {/* Row 5 */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Ship Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={recordForm.shipDate}
+                    onChange={(e) => setRecordForm({ ...recordForm, shipDate: e.target.value })}
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Arrival Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={recordForm.arrivalDate}
+                    onChange={(e) => setRecordForm({ ...recordForm, arrivalDate: e.target.value })}
+                    className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Value (INR) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">₹</span>
+                    <input
+                      type="number"
+                      required
+                      value={recordForm.value}
+                      onChange={(e) => setRecordForm({ ...recordForm, value: e.target.value })}
+                      placeholder="Enter value"
+                      className="w-full h-[36px] text-xs pl-6 pr-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setShowAddCard(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingRecord(null);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
+                >
+                  Save Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. BULK UPLOAD CSV MODAL (Popup - No Scrolling Down!) */}
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-100">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Bulk Upload CSV</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Import multiple trade records at once.</p>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00897B] hover:text-[#00796B] transition-colors whitespace-nowrap cursor-pointer"
+                  title="Download sample CSV template"
+                >
+                  <Download size={14} className="shrink-0" />
+                  <span>Download CSV Template</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBulkModal(false)}
                   className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                  title="Close section"
                 >
                   <X size={18} />
                 </button>
               </div>
-
-              {/* Form Fields */}
-              <form onSubmit={handleSaveRecord} className="space-y-3.5">
-                {/* Row 1: HS Code & Product Description */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      HS Code <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      ref={hsInputRef}
-                      type="text"
-                      required
-                      value={recordForm.hsCode}
-                      onChange={(e) => setRecordForm({ ...recordForm, hsCode: e.target.value })}
-                      placeholder="Enter HS code"
-                      className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Product Description <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={recordForm.description}
-                      onChange={(e) => setRecordForm({ ...recordForm, description: e.target.value })}
-                      placeholder="Enter product description"
-                      className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Row 2: Importer & Exporter */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Importer <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={recordForm.importer}
-                        onChange={(e) => setRecordForm({ ...recordForm, importer: e.target.value })}
-                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                      >
-                        <option value="">Select importer</option>
-                        {uniqueImporters.filter(i => i !== "All Importers").map((imp, idx) => (
-                          <option key={idx} value={imp}>{imp}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Exporter <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={recordForm.exporter}
-                        onChange={(e) => setRecordForm({ ...recordForm, exporter: e.target.value })}
-                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                      >
-                        <option value="">Select exporter</option>
-                        {uniqueExporters.filter(e => e !== "All Exporters").map((exp, idx) => (
-                          <option key={idx} value={exp}>{exp}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 3: Origin & Destination Country */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Origin Country <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={recordForm.originCountry}
-                        onChange={(e) => setRecordForm({ ...recordForm, originCountry: e.target.value })}
-                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                      >
-                        <option value="">Select origin country</option>
-                        {Object.keys(countryCodes).map((c, i) => (
-                          <option key={i} value={c}>{c}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Destination Country <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={recordForm.destinationCountry}
-                        onChange={(e) => setRecordForm({ ...recordForm, destinationCountry: e.target.value })}
-                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                      >
-                        <option value="">Select destination country</option>
-                        {Object.keys(countryCodes).map((c, i) => (
-                          <option key={i} value={c}>{c}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 4: Port of Loading & Port of Discharge */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Port of Loading <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={recordForm.portOfLoading}
-                        onChange={(e) => setRecordForm({ ...recordForm, portOfLoading: e.target.value })}
-                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                      >
-                        <option value="">Select port of loading</option>
-                        {uniquePorts.filter(p => p !== "All Ports").map((p, idx) => (
-                          <option key={idx} value={p}>{p}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Port of Discharge <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={recordForm.portOfDischarge}
-                        onChange={(e) => setRecordForm({ ...recordForm, portOfDischarge: e.target.value })}
-                        className="w-full h-[36px] text-xs px-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none bg-white text-gray-700 cursor-pointer"
-                      >
-                        <option value="">Select port of discharge</option>
-                        {Array.from(new Set(records.map(r => r.portOfDischarge))).map((p, idx) => (
-                          <option key={idx} value={p}>{p}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 5: Ship Date, Arrival Date & Value */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Ship Date <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        required
-                        value={recordForm.shipDate}
-                        onChange={(e) => setRecordForm({ ...recordForm, shipDate: e.target.value })}
-                        className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Arrival Date <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        required
-                        value={recordForm.arrivalDate}
-                        onChange={(e) => setRecordForm({ ...recordForm, arrivalDate: e.target.value })}
-                        className="w-full h-[36px] text-xs px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Value (INR) <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">₹</span>
-                      <input
-                        type="number"
-                        required
-                        value={recordForm.value}
-                        onChange={(e) => setRecordForm({ ...recordForm, value: e.target.value })}
-                        placeholder="Enter value"
-                        className="w-full h-[36px] text-xs pl-6 pr-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Buttons */}
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
-                  <button
-                    type="button"
-                    onClick={handleCancelForm}
-                    className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
-                  >
-                    Save Record
-                  </button>
-                </div>
-              </form>
             </div>
-          </div>
-        )}
 
-        {/* Card 2: Bulk Upload CSV (Right) */}
-        {showBulkCard && (
-          <div
-            ref={bulkCardRef}
-            id="bulk-upload-card"
-            className="bg-white rounded-xl border border-gray-200/90 shadow-xs p-5 sm:p-6 relative flex flex-col justify-between"
-          >
-            {/* Header with Title and Link */}
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3.5 border-b border-gray-100">
-                <div>
-                  <h3 className="text-base font-bold text-gray-900">Bulk Upload CSV</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Import multiple trade records at once.</p>
-                </div>
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={handleDownloadTemplate}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00897B] hover:text-[#00796B] transition-colors whitespace-nowrap cursor-pointer"
-                    title="Download sample CSV template"
-                  >
-                    <Download size={14} className="shrink-0" />
-                    <span>Download CSV Template</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowBulkCard(false)}
-                    className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                    title="Close section"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Drag & Drop Dropzone */}
+            {/* Body */}
+            <div className="p-5 space-y-4">
               <div
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -1402,8 +1326,8 @@ export default function MasterData() {
                     setUploadedFile(e.dataTransfer.files[0]);
                   }
                 }}
-                onClick={() => document.getElementById("csv-file-input-card").click()}
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center my-4 ${
+                onClick={() => document.getElementById("csv-modal-input").click()}
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
                   isDragging
                     ? "border-[#00897B] bg-teal-50/50"
                     : "border-[#80cbc4] hover:border-[#00897B] bg-[#e0f2f1]/25 hover:bg-[#e0f2f1]/40"
@@ -1422,7 +1346,7 @@ export default function MasterData() {
                   .csv files only
                 </span>
                 <input
-                  id="csv-file-input-card"
+                  id="csv-modal-input"
                   type="file"
                   accept=".csv"
                   className="hidden"
@@ -1435,17 +1359,17 @@ export default function MasterData() {
               </div>
 
               {/* Informational Alert Box */}
-              <div className="bg-[#e1f5fe]/80 border border-[#b3e5fc] rounded-xl p-3 flex items-center gap-2.5 text-[#0288d1] text-xs mb-4">
+              <div className="bg-[#e1f5fe]/80 border border-[#b3e5fc] rounded-xl p-3 flex items-center gap-2.5 text-[#0288d1] text-xs">
                 <Info size={16} className="shrink-0 text-[#0288d1]" />
                 <span>Match the template columns before uploading.</span>
               </div>
             </div>
 
-            {/* Footer Buttons with Safe Margin from Bottom-Right Floating FAB Button */}
-            <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5 pr-2">
+            {/* Footer */}
+            <div className="px-5 py-3.5 bg-gray-50/80 border-t border-gray-100 flex items-center justify-end gap-2.5">
               <button
                 type="button"
-                onClick={() => setUploadedFile(null)}
+                onClick={() => setShowBulkModal(false)}
                 className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 Cancel
@@ -1459,14 +1383,14 @@ export default function MasterData() {
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* 6. View Record Details Modal (When clicking Eye icon) */}
+      {/* 7. VIEW RECORD DETAILS MODAL */}
       {viewingRecord && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-100">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-gray-900">Shipment Details</h3>
                 <p className="text-xs text-gray-400">{viewingRecord._id}</p>
@@ -1479,7 +1403,7 @@ export default function MasterData() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4 text-xs">
+            <div className="p-5 space-y-3.5 text-xs">
               <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100 space-y-2">
                 <div className="flex justify-between">
                   <span className="font-semibold text-gray-500">HS Code:</span>
@@ -1522,10 +1446,10 @@ export default function MasterData() {
               </div>
             </div>
 
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <div className="px-5 py-3.5 bg-gray-50 border-t border-gray-100 flex justify-end">
               <button
                 onClick={() => setViewingRecord(null)}
-                className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg transition-colors cursor-pointer"
+                className="px-5 py-1.5 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg transition-colors cursor-pointer"
               >
                 Close
               </button>
