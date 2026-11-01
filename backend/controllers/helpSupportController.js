@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const SupportTicket = require("../models/SupportTicket");
 const HelpArticle = require("../models/HelpArticle");
 const HelpCategory = require("../models/HelpCategory");
@@ -27,6 +28,7 @@ function getUserType(user) {
 // Auto-seed sample tickets and categories if database is empty
 async function seedDefaultDataIfEmpty() {
   try {
+    if (mongoose.connection.readyState !== 1) return;
     const ticketCount = await SupportTicket.countDocuments();
     if (ticketCount === 0) {
       // Find admin, user, and b2b accounts
@@ -197,6 +199,7 @@ seedDefaultDataIfEmpty();
 // GET /api/help-support/dashboard
 exports.getDashboard = async (req, res) => {
   try {
+    await seedDefaultDataIfEmpty();
     const role = getUserRole(req.user);
     const userId = req.user._id;
 
