@@ -607,14 +607,14 @@ export default function MasterData() {
   };
 
   return (
-    <div className="w-full max-w-full space-y-4 pb-12 text-slate-800">
+    <div className="w-full max-w-full space-y-2 text-slate-800">
       {/* 1. Header with Title and Top Buttons */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight leading-tight">
             Master Data
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-[11px] text-gray-500">
             Manage import, export and shipment records.
           </p>
         </div>
@@ -644,11 +644,11 @@ export default function MasterData() {
       </div>
 
       {/* 2. Top Filter Bar Card (Compact Single-Row Design) */}
-      <div className="bg-white rounded-xl border border-gray-200/90 p-3 shadow-xs w-full overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200/90 p-2 shadow-xs w-full overflow-hidden">
         <div className="flex flex-wrap xl:flex-nowrap items-end gap-2 w-full">
           {/* HS Code / Product / ID */}
           <div className="flex-1 min-w-[150px]">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5">
               HS Code / Product / ID
             </label>
             <div className="relative">
@@ -663,14 +663,14 @@ export default function MasterData() {
                   if (e.key === "Enter") handleApplyFilters();
                 }}
                 placeholder="Search HS code, product or ID..."
-                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B]"
+                className="w-full h-[30px] text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-2.5 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B]"
               />
             </div>
           </div>
 
           {/* Origin Country */}
           <div className="w-[110px] sm:w-[120px]">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5">
               Origin Country
             </label>
             <div className="relative">
@@ -680,7 +680,7 @@ export default function MasterData() {
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, originCountry: e.target.value })
                 }
-                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[30px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueOrigins.map((country, i) => (
                   <option key={i} value={country}>
@@ -694,7 +694,7 @@ export default function MasterData() {
 
           {/* Destination */}
           <div className="w-[110px] sm:w-[120px]">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5">
               Destination
             </label>
             <div className="relative">
@@ -704,7 +704,7 @@ export default function MasterData() {
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, destinationCountry: e.target.value })
                 }
-                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[30px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueDests.map((dest, i) => (
                   <option key={i} value={dest}>
@@ -718,7 +718,7 @@ export default function MasterData() {
 
           {/* Importer */}
           <div className="w-[110px] sm:w-[120px]">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5">
               Importer
             </label>
             <div className="relative">
@@ -728,7 +728,7 @@ export default function MasterData() {
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, importer: e.target.value })
                 }
-                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[30px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueImporters.map((imp, i) => (
                   <option key={i} value={imp}>
@@ -742,7 +742,7 @@ export default function MasterData() {
 
           {/* Exporter */}
           <div className="w-[110px] sm:w-[120px]">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5">
               Exporter
             </label>
             <div className="relative">
@@ -752,7 +752,7 @@ export default function MasterData() {
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, exporter: e.target.value })
                 }
-                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[30px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniqueExporters.map((exp, i) => (
                   <option key={i} value={exp}>
@@ -766,7 +766,7 @@ export default function MasterData() {
 
           {/* Port of Loading */}
           <div className="w-[110px] sm:w-[120px]">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-0.5">
               Port of Loading
             </label>
             <div className="relative">
@@ -776,7 +776,7 @@ export default function MasterData() {
                 onChange={(e) =>
                   setFilterInputs({ ...filterInputs, portOfLoading: e.target.value })
                 }
-                className="w-full h-[34px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
+                className="w-full h-[30px] text-xs bg-white border border-gray-200 rounded-lg pl-7 pr-5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] appearance-none cursor-pointer"
               >
                 {uniquePorts.map((port, i) => (
                   <option key={i} value={port}>
@@ -792,13 +792,13 @@ export default function MasterData() {
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={handleApplyFilters}
-              className="h-[34px] px-3.5 bg-[#00897B] hover:bg-[#00796B] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs cursor-pointer flex items-center justify-center whitespace-nowrap"
+              className="h-[30px] px-3.5 bg-[#00897B] hover:bg-[#00796B] text-white text-xs font-semibold rounded-lg transition-colors shadow-xs cursor-pointer flex items-center justify-center whitespace-nowrap"
             >
               Apply Filters
             </button>
             <button
               onClick={handleResetFilters}
-              className="h-[34px] px-3 border border-[#00897B] text-[#00897B] hover:bg-teal-50/60 bg-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
+              className="h-[30px] px-3 border border-[#00897B] text-[#00897B] hover:bg-teal-50/60 bg-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
             >
               <RotateCcw size={12} />
               <span>Reset</span>
@@ -871,21 +871,21 @@ export default function MasterData() {
       {/* 4. Trade Records Table Card */}
       <div className="bg-white rounded-xl border border-gray-200/90 shadow-xs w-full overflow-hidden">
         <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-[11px]">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                {visibleColumns.hsCode && <th className="py-2.5 px-3 whitespace-nowrap">HS CODE</th>}
-                {visibleColumns.description && <th className="py-2.5 px-3 whitespace-nowrap min-w-[170px]">PRODUCT DESCRIPTION</th>}
-                {visibleColumns.importer && <th className="py-2.5 px-3 whitespace-nowrap">IMPORTER</th>}
-                {visibleColumns.exporter && <th className="py-2.5 px-3 whitespace-nowrap">EXPORTER</th>}
-                {visibleColumns.originCountry && <th className="py-2.5 px-3 whitespace-nowrap">ORIGIN</th>}
-                {visibleColumns.destinationCountry && <th className="py-2.5 px-3 whitespace-nowrap">DESTINATION</th>}
-                {visibleColumns.portOfLoading && <th className="py-2.5 px-3 whitespace-nowrap">PORT OF LOADING</th>}
-                {visibleColumns.portOfDischarge && <th className="py-2.5 px-3 whitespace-nowrap">PORT OF DISCHARGE</th>}
-                {visibleColumns.shipDate && <th className="py-2.5 px-3 whitespace-nowrap">SHIP DATE</th>}
-                {visibleColumns.arrivalDate && <th className="py-2.5 px-3 whitespace-nowrap">ARRIVAL DATE</th>}
-                {visibleColumns.value && <th className="py-2.5 px-3 whitespace-nowrap font-bold text-gray-800">VALUE (INR)</th>}
-                {visibleColumns.actions && <th className="py-2.5 px-3 text-center whitespace-nowrap">ACTIONS</th>}
+                {visibleColumns.hsCode && <th className="py-1.5 px-2.5 whitespace-nowrap">HS CODE</th>}
+                {visibleColumns.description && <th className="py-1.5 px-2.5 whitespace-nowrap min-w-[170px]">PRODUCT DESCRIPTION</th>}
+                {visibleColumns.importer && <th className="py-1.5 px-2.5 whitespace-nowrap">IMPORTER</th>}
+                {visibleColumns.exporter && <th className="py-1.5 px-2.5 whitespace-nowrap">EXPORTER</th>}
+                {visibleColumns.originCountry && <th className="py-1.5 px-2.5 whitespace-nowrap">ORIGIN</th>}
+                {visibleColumns.destinationCountry && <th className="py-1.5 px-2.5 whitespace-nowrap">DESTINATION</th>}
+                {visibleColumns.portOfLoading && <th className="py-1.5 px-2.5 whitespace-nowrap">PORT OF LOADING</th>}
+                {visibleColumns.portOfDischarge && <th className="py-1.5 px-2.5 whitespace-nowrap">PORT OF DISCHARGE</th>}
+                {visibleColumns.shipDate && <th className="py-1.5 px-2.5 whitespace-nowrap">SHIP DATE</th>}
+                {visibleColumns.arrivalDate && <th className="py-1.5 px-2.5 whitespace-nowrap">ARRIVAL DATE</th>}
+                {visibleColumns.value && <th className="py-1.5 px-2.5 whitespace-nowrap font-bold text-gray-800">VALUE (INR)</th>}
+                {visibleColumns.actions && <th className="py-1.5 px-2.5 text-center whitespace-nowrap">ACTIONS</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -896,35 +896,35 @@ export default function MasterData() {
                 >
                   {/* HS Code */}
                   {visibleColumns.hsCode && (
-                    <td className="py-3 px-3 whitespace-nowrap font-medium text-gray-900">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap font-medium text-gray-900">
                       {row.hsCode}
                     </td>
                   )}
 
                   {/* Product Description */}
                   {visibleColumns.description && (
-                    <td className="py-3 px-3 font-medium text-gray-800 max-w-[200px] truncate">
+                    <td className="py-1.5 px-2.5 font-medium text-gray-800 max-w-[200px] truncate">
                       {row.description}
                     </td>
                   )}
 
                   {/* Importer */}
                   {visibleColumns.importer && (
-                    <td className="py-3 px-3 whitespace-nowrap text-gray-600 max-w-[140px] truncate">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap text-gray-600 max-w-[140px] truncate">
                       {row.importer}
                     </td>
                   )}
 
                   {/* Exporter */}
                   {visibleColumns.exporter && (
-                    <td className="py-3 px-3 whitespace-nowrap text-gray-600 max-w-[140px] truncate">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap text-gray-600 max-w-[140px] truncate">
                       {row.exporter}
                     </td>
                   )}
 
                   {/* Origin with Flag */}
                   {visibleColumns.originCountry && (
-                    <td className="py-3 px-3 whitespace-nowrap">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap">
                       <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
                         <ReactCountryFlag
                           countryCode={countryCodes[row.originCountry] || ""}
@@ -940,7 +940,7 @@ export default function MasterData() {
 
                   {/* Destination with Flag */}
                   {visibleColumns.destinationCountry && (
-                    <td className="py-3 px-3 whitespace-nowrap">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap">
                       <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
                         <ReactCountryFlag
                           countryCode={countryCodes[row.destinationCountry] || ""}
@@ -956,42 +956,42 @@ export default function MasterData() {
 
                   {/* Port of Loading */}
                   {visibleColumns.portOfLoading && (
-                    <td className="py-3 px-3 whitespace-nowrap text-gray-600">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap text-gray-600">
                       {row.portOfLoading}
                     </td>
                   )}
 
                   {/* Port of Discharge */}
                   {visibleColumns.portOfDischarge && (
-                    <td className="py-3 px-3 whitespace-nowrap text-gray-600">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap text-gray-600">
                       {row.portOfDischarge}
                     </td>
                   )}
 
                   {/* Ship Date */}
                   {visibleColumns.shipDate && (
-                    <td className="py-3 px-3 whitespace-nowrap text-gray-600">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap text-gray-600">
                       {formatDate(row.shipDate)}
                     </td>
                   )}
 
                   {/* Arrival Date */}
                   {visibleColumns.arrivalDate && (
-                    <td className="py-3 px-3 whitespace-nowrap text-gray-600">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap text-gray-600">
                       {formatDate(row.arrivalDate)}
                     </td>
                   )}
 
                   {/* Value (INR) */}
                   {visibleColumns.value && (
-                    <td className="py-3 px-3 whitespace-nowrap font-bold text-gray-900">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap font-bold text-gray-900">
                       {formatValueINR(row.value)}
                     </td>
                   )}
 
                   {/* Actions (Eye & Pencil) */}
                   {visibleColumns.actions && (
-                    <td className="py-3 px-3 whitespace-nowrap text-center">
+                    <td className="py-1.5 px-2.5 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => setViewingRecord(row)}
@@ -1017,7 +1017,7 @@ export default function MasterData() {
         </div>
 
         {/* Table Pagination Footer */}
-        <div className="p-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-white">
+        <div className="py-2 px-3 border-t border-gray-100 flex items-center justify-between gap-3 bg-white pr-20 sm:pr-24">
           <p className="text-xs text-gray-500">
             Showing {totalRecords === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + pageSize, totalRecords)} of {totalRecords} records
           </p>
@@ -1027,7 +1027,7 @@ export default function MasterData() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs"
+              className="w-6 h-6 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer text-xs"
             >
               &lt;
             </button>
@@ -1037,7 +1037,7 @@ export default function MasterData() {
               <button
                 key={pageNum}
                 onClick={() => setCurrentPage(pageNum)}
-                className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                className={`w-6 h-6 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   currentPage === pageNum
                     ? "bg-[#00897B] text-white"
                     : "border border-gray-200 text-gray-700 hover:bg-gray-50"

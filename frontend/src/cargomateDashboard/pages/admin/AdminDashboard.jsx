@@ -441,7 +441,7 @@ export default function AdminDashboard({profileMode=false}) {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 ">
+    <div className="flex h-screen w-screen max-w-full overflow-hidden bg-gray-100">
       {/* Overlay for mobile */}
 
       {sidebarOpen && (
@@ -454,8 +454,7 @@ export default function AdminDashboard({profileMode=false}) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-30 w-52 xl:w-60
-            text-white bg-white flex flex-col
+          fixed lg:static inset-y-0 left-0 z-30 w-52 xl:w-56 h-full text-white bg-white flex flex-col
           transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0 flex-shrink-0
@@ -492,7 +491,7 @@ export default function AdminDashboard({profileMode=false}) {
         </nav>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Topbar */}
         <header className="bg-white border-b border-gray-200  px-3 sm:px-4 py-1 flex items-center gap-3 flex-shrink-0">
           <button
@@ -531,7 +530,7 @@ export default function AdminDashboard({profileMode=false}) {
 
         {/* Page Content */}
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 p-4 sm:p-5 min-w-0">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 p-3 sm:p-4 min-w-0">
           {activeNav === "My Profile" && <AccountProfile embedded />}
           {activeNav === "Admin Dashboard" && (
             <div className="">
@@ -898,7 +897,7 @@ export default function AdminDashboard({profileMode=false}) {
        
       {fabOpen && <div className="fixed inset-0 z-30" onClick={() => setFabOpen(false)} />}
           
-      <div className="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-40">
+      <div className="fixed bottom-4 right-4 flex flex-col items-end gap-3 z-40">
         {fabOpen && (
           <div className="flex flex-col gap-2 items-end mb-1">
             {fabActions.map((a, i) => (
@@ -912,7 +911,7 @@ export default function AdminDashboard({profileMode=false}) {
             ))}
           </div>
         )}
-        <button onClick={() => setFabOpen(!fabOpen)} className={`w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-white transition-all ${fabOpen ? "bg-gray-600" : "bg-teal-500 hover:bg-teal-600"}`}>
+        <button onClick={() => setFabOpen(!fabOpen)} className={`w-11 h-11 rounded-full shadow-lg flex items-center justify-center text-white transition-all ${fabOpen ? "bg-gray-600" : "bg-teal-500 hover:bg-teal-600"}`}>
           {fabOpen ? <FiX size={22} /> : <FiPlus size={24} />}
         </button>
       </div>
