@@ -87,6 +87,7 @@ import {
   MdPublic,
   MdBusiness,
   MdLocalShipping,
+  MdAnnouncement,
   MdSmartToy,
   MdInsights,
   MdApi,
@@ -105,6 +106,7 @@ import HSRules from "./HsRules";
 import CountryRules from "./CountryRules";
 import DGFTSchemes from "./DgftScheme";
 import Shipment from "./Shipment";
+import NoticesSection from "./Notices";
 import VendorsPartners from "./VendorsPartners";
 import AiAssistant from "./AiAssistant";
 import TradeIntelligence from "./TradeIntelligence";
@@ -184,6 +186,7 @@ const navItems = [
   { icon: MdPublic, label: "Country Rules", color: "text-indigo-400" },
   { icon: MdBusiness, label: "DGFT Schemes", color: "text-pink-400" },
   { icon: MdLocalShipping, label: "Shipment", color: "text-cyan-400" },
+  { icon: MdAnnouncement, label: "Notices", color: "text-amber-400" },
 
   { icon: MdSmartToy, label: "AI Assistant", color: "text-blue-500" },
   // { icon: MdInsights, label: "Trade Intelligence", color: "text-rose-400" },
@@ -533,7 +536,7 @@ export default function AdminDashboard({profileMode=false}) {
               <div
                 className="flex justify-end mb-3  "
               >
-                <button onClick={() => setShowNotice(true)}
+                <button onClick={() => { setActiveNav("Notices"); setShowNotice(true); }}
                   className="flex items-center gap-1.5 bg-teal-500 hover:bg-teal-600 text-white 
             text-sm font-semibold px-3 py-2 rounded-lg transition-colors"
                 >
@@ -864,6 +867,7 @@ export default function AdminDashboard({profileMode=false}) {
            {activeNav === "DGFT Schemes" && <DGFTSchemes/>}
 
            {activeNav === "Shipment" && <Shipment /> }
+           {activeNav === "Notices" && <NoticesSection setShowNotice={setShowNotice} /> }
 
 
            {activeNav === "Vendors/ Partners" && <VendorsPartners /> }
