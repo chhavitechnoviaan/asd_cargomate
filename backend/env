@@ -1,0 +1,18 @@
+MONGO_URI=mongodb+srv://mahimatechnoviaan_db_user:asd-cargomate@cluster0.7z7jxas.mongodb.net/
+PORT=8000
+JWT_SECRET=Asdcargomatekey
+
+
+# JWT (used by verifyJWT middleware to decode admin tokens)
+JWT_SECRET=change_this_to_a_long_random_string
+JWT_EXPIRES_IN=7d
+
+# AES-256 encryption for sensitive Settings fields (must be exactly 32 chars/64 hex)
+# Generate: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"
+ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=urqfjb5j
+CLOUDINARY_API_KEY=753824329998135
+CLOUDINARY_API_SECRET=OMr_-ZARpO2knEW81VifyC2AkF8
+CLOUDINARY_FOLDER=cargomate

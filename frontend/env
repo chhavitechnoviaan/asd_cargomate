@@ -1,0 +1,11 @@
+# VITE_AI_API_BASE_URL=https://ai-service-nb69.onrender.com/api/api
+
+# VITE_API_URL=https://asd-project-server.onrender.com/api
+VITE_AI_API_BASE_URL=https://ai-service-nb69.onrender.com/api
+# VITE_API_URL=https://asd-37v9.onrender.com/api
+VITE_CARGOMATE_API_URL=https://ai-service-nb69.onrender.com/api
+VITE_API_URL=http://localhost:8000/api
+# CargoMate AI API
+# VITE_CARGOMATE_API_URL=https://ai-service-nb69.onrender.com/api/api
+
+
