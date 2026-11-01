@@ -117,6 +117,7 @@ import UpgradePlan from "./UpgradePlan";
 import Subscription from "./Subscription";
 import NotificationDashboard from "./Notification";
 import HelpSupportDashboard from "./Help&Support";
+import NoticeBanner from "../../components/NoticeBanner";
 import ProfileSettingsDashboard from "./ProfileSettings";
 import { useNavigate } from "react-router-dom";
 import MessagesModal from "../../components/Messages";
@@ -774,9 +775,11 @@ export default function UserDashboard({profileMode=false}) {
           <MdMenu size={18} />
         </button>
 
-        <div className="lg:flex  items-center sm:w-60 hidden  justify-center gap-2 px-4 py-2   ">
-          <img src={logo} className="h-10" onClick={() => navigate("/")} />
+        <div className="lg:flex items-center sm:w-60 hidden justify-center gap-2 px-4 py-2">
+          <img src={logo} className="h-10 cursor-pointer" onClick={() => navigate("/")} />
         </div>
+
+        <NoticeBanner />
 
         <div className="flex items-center gap-1.5 ml-auto">
           <button    onClick={() => setShowNotifications(true)} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-600 relative">

@@ -208,6 +208,7 @@ import Reports from "./Reports";
 import AlertNotification from "./AlertNotification";
 import Settings from "./Settings";
 import HelpSupportDashboard from "../userDashboard/Help&Support";
+import NoticeBanner from "../../components/NoticeBanner";
 
 
 
@@ -491,18 +492,7 @@ const [accountSummary, setAccountSummary] = useState({});
                <img src={logo} className="h-10" onClick={() => navigate("/")} />
              </div>
      
-             <div className="flex-1 w-full sm:max-w-sm md:max-w-md">
-              {/* <div className="relative sm:w-full w-20">
-                 <FiSearch
-                   className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-                   size={14}
-                 />
-                 <input
-                   type="text"
-                   placeholder="Search"
-                   className="sm:w-full w-14 pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-teal-400"
-                 />
-               </div>*/}
+             <NoticeBanner />*/}
              </div>
      
              <div className="flex items-center gap-1.5 ml-auto">
