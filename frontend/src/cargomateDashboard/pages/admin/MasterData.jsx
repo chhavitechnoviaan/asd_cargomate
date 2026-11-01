@@ -1,17 +1,30 @@
-import { useState,  useMemo} from "react";
-import { FaDatabase, FaPlus, FaPen } from "react-icons/fa6";
-import { FaCalendarAlt, FaTimes } from "react-icons/fa";
-import API from "../../api/axios"; 
-import { toast } from "react-hot-toast";
-import { useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import ReactCountryFlag from "react-country-flag";
+import Swal from "sweetalert2";
 import {
-  
+  Search,
+  Globe,
+  Anchor,
+  Building2,
+  RotateCcw,
+  Plus,
+  Upload,
   Columns,
-   List,   LayoutGrid,  ChevronLeft,
-  ChevronRight,Search,SlidersHorizontal,  MoreVertical,
-  TrendingUp,  X, Check  , Trash2 , Plus, RotateCcw,
+  Eye,
+  Edit2,
+  Trash2,
+  X,
+  Check,
+  Download,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  UploadCloud,
+  Info,
+  FileText
 } from "lucide-react";
+
+// ISO Country Code mapping for flag rendering
 const countryCodes = {
   India: "IN",
   China: "CN",
@@ -28,1049 +41,693 @@ const countryCodes = {
   France: "FR",
   Singapore: "SG",
   Australia: "AU",
+  "South Korea": "KR",
+  Sweden: "SE",
+  Belgium: "BE",
+  "United Kingdom": "GB",
+  UK: "GB",
+  Italy: "IT",
+  Netherlands: "NL",
+  Vietnam: "VN",
+  Malaysia: "MY",
+  Thailand: "TH",
+  Canada: "CA",
 };
 
-const columnOptions = [
-  { key: "hsCode", label: "HS Code" },
-  { key: "description", label: "Product Description" },
-  { key: "importer", label: "Importer" },
-  { key: "exporter", label: "Exporter" },
-  { key: "origin", label: "Origin" },
-  { key: "dest", label: "Dest" },
-  { key: "portLoading", label: "Port of Loading" },
-  { key: "portDischarge", label: "Port of Discharge" },
-  { key: "shipDate", label: "Ship Date" },
-  { key: "arrDate", label: "Arr. Date" },
-  { key: "value", label: "Value (INR)" },
-  { key: "status", label: "Status" },
-];
-
-const initialCategories = [
-  { id: 1, name: "Product Categories", subtitle: "Supported product categories", items: Array.from({ length: 45 }, (_, i) => ({ id: i + 1, code: `PRO-${String(i + 1).padStart(3, "0")}`, name: "Sample Product 01", status: "Active" })) },
-  { id: 2, name: "Shipment Types", subtitle: "Supported shipment types", items: Array.from({ length: 12 }, (_, i) => ({ id: i + 1, code: `Ship-${String(i + 1).padStart(3, "0")}`, name: "Sample Product 01", status: "Active" })) },
-  { id: 3, name: "Container Types", subtitle: "Supported container types", items: Array.from({ length: 12 }, (_, i) => ({ id: i + 1, code: `Con-${String(i + 1).padStart(3, "0")}`, name: "Sample Product 01", status: "Active" })) },
-  { id: 4, name: "Payment Types", subtitle: "Supported payment types", items: Array.from({ length: 12 }, (_, i) => ({ id: i + 1, code: `Pay-${String(i + 1).padStart(3, "0")}`, name: "Sample Product 01", status: "Active" })) },
-  { id: 5, name: "Incoterms Types", subtitle: "Supported incoterms types", items: Array.from({ length: 12 }, (_, i) => ({ id: i + 1, code: `Inc-${String(i + 1).padStart(3, "0")}`, name: "Sample Product 01", status: "Active" })) },
-  { id: 6, name: "Currency Codes", subtitle: "Supported currency codes", items: Array.from({ length: 12 }, (_, i) => ({ id: i + 1, code: `Cur-${String(i + 1).padStart(3, "0")}`, name: "Sample Product 01", status: "Active" })) },
-];
-
-const ITEMS_PER_PAGE = 9;
-
-function AddCategoryModal({ onClose, onAdd }) {
-  const [name, setName] = useState("");
-  const [subtitle, setSubtitle] = useState("");
-  const [errors, setErrors] = useState({});
-
-  const validate = () => {
-    const e = {};
-    if (!name.trim()) e.name = "Category name is required";
-    if (!subtitle.trim()) e.subtitle = "Subtitle is required";
-    return e;
-  };
-
-  const handleAdd = () => {
-    const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
-    onAdd({ name: name.trim(), subtitle: subtitle.trim() });
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-semibold text-gray-800">Add Category</h3>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <FaTimes />
-          </button>
-        </div>
-        <div className="flex flex-col gap-4 mb-6">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Category Name</label>
-            <input
-              type="text"
-              className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all ${errors.name ? "border-red-400" : "border-gray-200"}`}
-              placeholder="Enter category name"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: "" })); }}
-            />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Subtitle</label>
-            <input
-              type="text"
-              className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all ${errors.subtitle ? "border-red-400" : "border-gray-200"}`}
-              placeholder="Enter subtitle"
-              value={subtitle}
-              onChange={(e) => { setSubtitle(e.target.value); setErrors((p) => ({ ...p, subtitle: "" })); }}
-            />
-            {errors.subtitle && <p className="text-xs text-red-500 mt-1">{errors.subtitle}</p>}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 font-medium transition-colors">Cancel</button>
-          <button onClick={handleAdd} className="flex-1 px-4 py-2.5 text-sm text-white bg-teal-500 rounded-xl hover:bg-teal-600 font-medium transition-colors">Add Category</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AddItemModal({ categoryName, prefix, onClose, onAdd }) {
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [status, setStatus] = useState("active");
-  const [errors, setErrors] = useState({});
-
-  const validate = () => {
-    const e = {};
-    if (!code.trim()) e.code = "Code is required";
-    if (!name.trim()) e.name = "Name is required";
-    return e;
-  };
-
-  const handleAdd = () => {
-    const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
-    onAdd({ code: code.trim(), name: name.trim(), status });
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-semibold text-gray-800">Add Item — {categoryName}</h3>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <FaTimes />
-          </button>
-        </div>
-        <div className="flex flex-col gap-4 mb-6">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Code</label>
-            <input
-              type="text"
-              className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all ${errors.code ? "border-red-400" : "border-gray-200"}`}
-              placeholder={`e.g. ${prefix}-001`}
-              value={code}
-              onChange={(e) => { setCode(e.target.value); setErrors((p) => ({ ...p, code: "" })); }}
-            />
-            {errors.code && <p className="text-xs text-red-500 mt-1">{errors.code}</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Name</label>
-            <input
-              type="text"
-              className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10 transition-all ${errors.name ? "border-red-400" : "border-gray-200"}`}
-              placeholder="Enter item name"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: "" })); }}
-            />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Status</label>
-            <select
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-teal-500 bg-white transition-all"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option>Active</option>
-              <option>Inactive</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 font-medium transition-colors">Cancel</button>
-          <button onClick={handleAdd} className="flex-1 px-4 py-2.5 text-sm text-white bg-teal-500 rounded-xl hover:bg-teal-600 font-medium transition-colors">Add Item</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EditItemModal({ item, onClose, onUpdate }) {
-  const [name, setName] = useState(item.name);
-  const [status, setStatus] = useState(item.status);
-
-  const handleUpdate = () => {
-    onUpdate({
-      ...item,
-      name,
-      status,
-    });
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-        <h3 className="text-base font-semibold mb-4">Edit Item</h3>
-
-        <input
-          className="w-full border p-2 rounded mb-3"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <select
-          className="w-full border p-2 rounded mb-4"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 border py-2 rounded">
-            Cancel
-          </button>
-          <button onClick={handleUpdate} className="flex-1 bg-teal-500 text-white py-2 rounded">
-            Update
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const shipments = [
+// Initial realistic dataset matching the Master Data design
+const initialShipmentRecords = [
   {
     _id: "SHIP001",
-    referenceNumber: "SHP-2026-001",
-    sbNumber: "SB20260001",
-
-    cargo: {
-      hsCode: {
-        hsCode: "84713010",
-        description: "Laptop Computers",
-      },
-      description: "Dell Latitude Business Laptop",
-      value: 24500000,
-    },
-
-    importer: {
-      companyName: "TechNova India Pvt Ltd",
-    },
-
-    exporter: {
-      companyName: "Dell Technologies USA",
-    },
-
-    route: {
-      originCountry: "United States",
-      destinationCountry: "India",
-      originCity: "New York",
-      destinationCity: "Mumbai",
-    },
-
-    shipmentDate: "2026-08-05",
-    eta: "2026-08-20",
-    shipmentStatus: "Delivered",
+    hsCode: "84713010",
+    description: "Dell Latitude Business Laptop",
+    importer: "TechNova India Pvt Ltd",
+    exporter: "Dell Technologies USA",
+    originCountry: "United States",
+    destinationCountry: "India",
+    portOfLoading: "New York",
+    portOfDischarge: "Mumbai",
+    shipDate: "2026-08-05",
+    arrivalDate: "2026-08-20",
+    value: 24500000,
+    status: "Delivered",
   },
-
   {
     _id: "SHIP002",
-    referenceNumber: "SHP-2026-002",
-    sbNumber: "SB20260002",
-
-    cargo: {
-      hsCode: {
-        hsCode: "85171300",
-        description: "Smartphones",
-      },
-      description: "Smartphone Devices",
-      value: 18200000,
-    },
-
-    importer: {
-      companyName: "Reliance Digital India",
-    },
-
-    exporter: {
-      companyName: "Samsung Electronics",
-    },
-
-    route: {
-      originCountry: "South Korea",
-      destinationCountry: "India",
-      originCity: "Busan",
-      destinationCity: "Chennai",
-    },
-
-    shipmentDate: "2026-08-10",
-    eta: "2026-08-27",
-    shipmentStatus: "In Transit",
+    hsCode: "85171300",
+    description: "Smartphone Devices",
+    importer: "Reliance Digital India",
+    exporter: "Samsung Electronics",
+    originCountry: "South Korea",
+    destinationCountry: "India",
+    portOfLoading: "Busan",
+    portOfDischarge: "Chennai",
+    shipDate: "2026-08-10",
+    arrivalDate: "2026-08-27",
+    value: 18200000,
+    status: "In Transit",
   },
-
   {
     _id: "SHIP003",
-    referenceNumber: "SHP-2026-003",
-    sbNumber: "SB20260003",
-
-    cargo: {
-      hsCode: {
-        hsCode: "87032300",
-        description: "Motor Cars",
-      },
-      description: "Passenger Motor Vehicles",
-      value: 68500000,
-    },
-
-    importer: {
-      companyName: "Tata Motors Limited",
-    },
-
-    exporter: {
-      companyName: "Toyota Motor Corporation",
-    },
-
-    route: {
-      originCountry: "Japan",
-      destinationCountry: "India",
-      originCity: "Yokohama",
-      destinationCity: "Mumbai",
-    },
-
-    shipmentDate: "2026-07-28",
-    eta: "2026-08-25",
-    shipmentStatus: "In Transit",
+    hsCode: "87032300",
+    description: "Passenger Motor Vehicles",
+    importer: "Tata Motors Limited",
+    exporter: "Toyota Motor Corporation",
+    originCountry: "Japan",
+    destinationCountry: "India",
+    portOfLoading: "Yokohama",
+    portOfDischarge: "Mumbai",
+    shipDate: "2026-07-28",
+    arrivalDate: "2026-08-25",
+    value: 68500000,
+    status: "In Transit",
   },
-
   {
     _id: "SHIP004",
-    referenceNumber: "SHP-2026-004",
-    sbNumber: "SB20260004",
-
-    cargo: {
-      hsCode: {
-        hsCode: "85044090",
-        description: "Electrical Transformers",
-      },
-      description: "Industrial Power Transformers",
-      value: 32600000,
-    },
-
-    importer: {
-      companyName: "Adani Power Limited",
-    },
-
-    exporter: {
-      companyName: "Siemens Germany",
-    },
-
-    route: {
-      originCountry: "Germany",
-      destinationCountry: "India",
-      originCity: "Hamburg",
-      destinationCity: "Mundra",
-    },
-
-    shipmentDate: "2026-08-01",
-    eta: "2026-08-18",
-    shipmentStatus: "Delivered",
+    hsCode: "85044090",
+    description: "Industrial Power Transformer",
+    importer: "Adani Power Limited",
+    exporter: "Siemens Germany",
+    originCountry: "Germany",
+    destinationCountry: "India",
+    portOfLoading: "Hamburg",
+    portOfDischarge: "Mundra",
+    shipDate: "2026-08-01",
+    arrivalDate: "2026-08-18",
+    value: 32600000,
+    status: "Delivered",
   },
-
   {
     _id: "SHIP005",
-    referenceNumber: "SHP-2026-005",
-    sbNumber: "SB20260005",
-
-    cargo: {
-      hsCode: {
-        hsCode: "30049099",
-        description: "Pharmaceutical Products",
-      },
-      description: "Medicines and Pharmaceutical Products",
-      value: 12800000,
-    },
-
-    importer: {
-      companyName: "Sun Pharma Industries",
-    },
-
-    exporter: {
-      companyName: "Pfizer Inc.",
-    },
-
-    route: {
-      originCountry: "United States",
-      destinationCountry: "India",
-      originCity: "Los Angeles",
-      destinationCity: "Nhava Sheva",
-    },
-
-    shipmentDate: "2026-08-12",
-    eta: "2026-08-30",
-    shipmentStatus: "In Transit",
+    hsCode: "30049099",
+    description: "Medicines and Pharmaceuticals",
+    importer: "Sun Pharma Industries",
+    exporter: "Pfizer Inc.",
+    originCountry: "United States",
+    destinationCountry: "India",
+    portOfLoading: "Los Angeles",
+    portOfDischarge: "Nhava Sheva",
+    shipDate: "2026-08-12",
+    arrivalDate: "2026-08-30",
+    value: 12800000,
+    status: "In Transit",
   },
-
   {
     _id: "SHIP006",
-    referenceNumber: "SHP-2026-006",
-    sbNumber: "SB20260006",
-
-    cargo: {
-      hsCode: {
-        hsCode: "94036000",
-        description: "Wooden Furniture",
-      },
-      description: "Premium Wooden Office Furniture",
-      value: 7600000,
-    },
-
-    importer: {
-      companyName: "Urban Living India",
-    },
-
-    exporter: {
-      companyName: "IKEA Sweden",
-    },
-
-    route: {
-      originCountry: "Sweden",
-      destinationCountry: "India",
-      originCity: "Gothenburg",
-      destinationCity: "Chennai",
-    },
-
-    shipmentDate: "2026-08-08",
-    eta: "2026-08-29",
-    shipmentStatus: "Pending",
+    hsCode: "94036000",
+    description: "Premium Wooden Office Furniture",
+    importer: "Urban Living India",
+    exporter: "IKEA Sweden",
+    originCountry: "Sweden",
+    destinationCountry: "India",
+    portOfLoading: "Gothenburg",
+    portOfDischarge: "Chennai",
+    shipDate: "2026-08-08",
+    arrivalDate: "2026-08-29",
+    value: 7600000,
+    status: "Pending",
   },
-
   {
     _id: "SHIP007",
-    referenceNumber: "SHP-2026-007",
-    sbNumber: "SB20260007",
-
-    cargo: {
-      hsCode: {
-        hsCode: "85423100",
-        description: "Electronic Integrated Circuits",
-      },
-      description: "Microprocessors and Integrated Circuits",
-      value: 41500000,
-    },
-
-    importer: {
-      companyName: "Wipro Technologies",
-    },
-
-    exporter: {
-      companyName: "Intel Corporation",
-    },
-
-    route: {
-      originCountry: "United States",
-      destinationCountry: "India",
-      originCity: "San Francisco",
-      destinationCity: "Mumbai",
-    },
-
-    shipmentDate: "2026-07-30",
-    eta: "2026-08-22",
-    shipmentStatus: "Delivered",
+    hsCode: "85423100",
+    description: "Electronic Integrated Circuits",
+    importer: "Wipro Technologies",
+    exporter: "Intel Corporation",
+    originCountry: "United States",
+    destinationCountry: "India",
+    portOfLoading: "San Francisco",
+    portOfDischarge: "Mumbai",
+    shipDate: "2026-07-30",
+    arrivalDate: "2026-08-22",
+    value: 41500000,
+    status: "Delivered",
   },
-
   {
     _id: "SHIP008",
-    referenceNumber: "SHP-2026-008",
-    sbNumber: "SB20260008",
-
-    cargo: {
-      hsCode: {
-        hsCode: "62034200",
-        description: "Cotton Garments",
-      },
-      description: "Men's Cotton Apparel",
-      value: 9400000,
-    },
-
-    importer: {
-      companyName: "Reliance Retail",
-    },
-
-    exporter: {
-      companyName: "H&M Sweden",
-    },
-
-    route: {
-      originCountry: "Bangladesh",
-      destinationCountry: "India",
-      originCity: "Chittagong",
-      destinationCity: "Kolkata",
-    },
-
-    shipmentDate: "2026-08-14",
-    eta: "2026-09-02",
-    shipmentStatus: "In Transit",
+    hsCode: "62034200",
+    description: "Men's Cotton Apparel",
+    importer: "Reliance Retail",
+    exporter: "H&M Sweden",
+    originCountry: "Sweden",
+    destinationCountry: "India",
+    portOfLoading: "Stockholm",
+    portOfDischarge: "Nhava Sheva",
+    shipDate: "2026-08-03",
+    arrivalDate: "2026-08-21",
+    value: 9400000,
+    status: "In Transit",
   },
-
   {
     _id: "SHIP009",
-    referenceNumber: "SHP-2026-009",
-    sbNumber: "SB20260009",
-
-    cargo: {
-      hsCode: {
-        hsCode: "10063020",
-        description: "Rice",
-      },
-      description: "Premium Basmati Rice",
-      value: 5600000,
-    },
-
-    importer: {
-      companyName: "Lulu Hypermarket",
-    },
-
-    exporter: {
-      companyName: "Al Dahra Agriculture",
-    },
-
-    route: {
-      originCountry: "United Arab Emirates",
-      destinationCountry: "India",
-      originCity: "Dubai",
-      destinationCity: "Mundra",
-    },
-
-    shipmentDate: "2026-08-03",
-    eta: "2026-08-19",
-    shipmentStatus: "Delivered",
+    hsCode: "10063020",
+    description: "Basmati Rice Export Consignment",
+    importer: "Al Maya Group UAE",
+    exporter: "KRBL Limited India",
+    originCountry: "India",
+    destinationCountry: "UAE",
+    portOfLoading: "Kandla",
+    portOfDischarge: "Jebel Ali",
+    shipDate: "2026-08-14",
+    arrivalDate: "2026-08-24",
+    value: 15600000,
+    status: "Delivered",
   },
-
   {
     _id: "SHIP010",
-    referenceNumber: "SHP-2026-010",
-    sbNumber: "SB20260010",
-
-    cargo: {
-      hsCode: {
-        hsCode: "84148090",
-        description: "Industrial Compressors",
-      },
-      description: "Heavy Duty Industrial Air Compressors",
-      value: 27300000,
-    },
-
-    importer: {
-      companyName: "Larsen & Toubro",
-    },
-
-    exporter: {
-      companyName: "Atlas Copco Sweden",
-    },
-
-    route: {
-      originCountry: "Sweden",
-      destinationCountry: "India",
-      originCity: "Stockholm",
-      destinationCity: "Nhava Sheva",
-    },
-
-    shipmentDate: "2026-08-15",
-    eta: "2026-09-05",
-    shipmentStatus: "Pending",
+    hsCode: "84148090",
+    description: "Industrial Rotary Air Compressors",
+    importer: "L&T Heavy Engineering",
+    exporter: "Atlas Copco Belgium",
+    originCountry: "Belgium",
+    destinationCountry: "India",
+    portOfLoading: "Antwerp",
+    portOfDischarge: "Chennai",
+    shipDate: "2026-07-25",
+    arrivalDate: "2026-08-19",
+    value: 28900000,
+    status: "In Transit",
   },
 ];
+
+// Available columns for toggle
+const allColumns = [
+  { key: "hsCode", label: "HS CODE" },
+  { key: "description", label: "PRODUCT DESCRIPTION" },
+  { key: "importer", label: "IMPORTER" },
+  { key: "exporter", label: "EXPORTER" },
+  { key: "originCountry", label: "ORIGIN" },
+  { key: "destinationCountry", label: "DESTINATION" },
+  { key: "portOfLoading", label: "PORT OF LOADING" },
+  { key: "portOfDischarge", label: "PORT OF DISCHARGE" },
+  { key: "shipDate", label: "SHIP DATE" },
+  { key: "arrivalDate", label: "ARRIVAL DATE" },
+  { key: "value", label: "VALUE (INR)" },
+  { key: "actions", label: "ACTIONS" },
+];
+
 export default function MasterData() {
-  const [categories, setCategories] = useState([]);
-  const [items, setItems] = useState([]);
-  const [selectedId, setSelectedId] = useState(1);
-  const [showCatModal, setShowCatModal] = useState(false);
-  const [showItemModal, setShowItemModal] = useState(false);
-  const [showRight, setShowRight] = useState(false);
-  const [pages, setPages] = useState({});
-  const [editItem, setEditItem] = useState(null);
-    const [searchTerm, setSearchTerm] = useState("");
-      const [selectedOrigin, setSelectedOrigin] = useState("All Countries");
-        const [selectedDest, setSelectedDest] = useState("All Countries");
-        const [selectedImporter, setSelectedImporter] = useState("All Importers");
-        const [selectedExporter, setSelectedExporter] = useState("All Exporters");
-        const [selectedPort, setSelectedPort] = useState("All Ports");
-           const [shipmentStartDate, setShipmentStartDate] = useState(null);
-            const [shipmentEndDate, setShipmentEndDate] = useState(null);
-  const selected = categories.find((c) => c._id === selectedId);
-   const [openMenu, setOpenMenu] = useState(null);
+  const [records, setRecords] = useState(initialShipmentRecords);
 
-   const [showAddRowModal, setShowAddRowModal] = useState(false);
+  // Active filters in form inputs
+  const [filterInputs, setFilterInputs] = useState({
+    search: "",
+    originCountry: "All Countries",
+    destinationCountry: "All Countries",
+    importer: "All Importers",
+    exporter: "All Exporters",
+    portOfLoading: "All Ports",
+  });
 
-const [newShipment, setNewShipment] = useState({
-  hsCode: "",
-  description: "",
-  importer: "",
-  exporter: "",
-  origin: "",
-  dest: "",
-  portLoading: "",
-  portDischarge: "",
-  shipDate: "",
-  arrDate: "",
-  value: "",
-  status: "In Transit",
-});
+  // Applied filters affecting table
+  const [appliedFilters, setAppliedFilters] = useState({
+    search: "",
+    originCountry: "All Countries",
+    destinationCountry: "All Countries",
+    importer: "All Importers",
+    exporter: "All Exporters",
+    portOfLoading: "All Ports",
+  });
 
-const handleShipmentChange = (field, value) => {
-  setNewShipment((prev) => ({
-    ...prev,
-    [field]: value,
-  }));
-};
+  // Table controls
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleColumns, setVisibleColumns] = useState(
+    allColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
+  );
+  const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
 
-const handleAddShipmentRow = () => {
-  const newRow = {
-    cargo: {
-      hsCode: {
-        hsCode: newShipment.hsCode,
-      },
-      description: newShipment.description,
-      value: Number(newShipment.value),
-    },
+  // Modals state
+  const [showAddEditModal, setShowAddEditModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [viewingRecord, setViewingRecord] = useState(null);
+  const [showBulkModal, setShowBulkModal] = useState(false);
 
-    importer: {
-      companyName: newShipment.importer,
-    },
-
-    exporter: {
-      companyName: newShipment.exporter,
-    },
-
-    route: {
-      originCountry: newShipment.origin,
-      destinationCountry: newShipment.dest,
-      originCity: newShipment.portLoading,
-      destinationCity: newShipment.portDischarge,
-    },
-
-    shipmentDate: newShipment.shipDate,
-    eta: newShipment.arrDate,
-    shipmentStatus: newShipment.status,
-  };
-
-  // Yaha apne original shipments state ka naam use karo
-  setShipments((prev) => [...prev, newRow]);
-
-  setNewShipment({
+  // Add / Edit Record Form State
+  const [recordForm, setRecordForm] = useState({
     hsCode: "",
     description: "",
     importer: "",
     exporter: "",
-    origin: "",
-    dest: "",
-    portLoading: "",
-    portDischarge: "",
+    originCountry: "",
+    destinationCountry: "",
+    portOfLoading: "",
+    portOfDischarge: "",
     shipDate: "",
-    arrDate: "",
+    arrivalDate: "",
     value: "",
     status: "In Transit",
   });
 
-  setShowAddRowModal(false);
-};
+  // Bulk Upload File State
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
- const handleApplyFilters = () => {
-    setAppliedFilters({
-      search: searchTerm,
-      port: selectedPort,
-      origin: selectedOrigin,
-      exporter: selectedExporter,
-      importer: selectedImporter,
-    });
+  // Format Value in INR (e.g. ₹ 2.45 Cr, ₹ 1.82 Cr)
+  const formatValueINR = (val) => {
+    if (typeof val === "string" && val.includes("₹")) return val;
+    const num = Number(val);
+    if (isNaN(num)) return val ? `₹ ${val}` : "₹ 0.00";
+    if (num >= 10000000) {
+      return `₹ ${(num / 10000000).toFixed(2)} Cr`;
+    }
+    if (num >= 100000) {
+      return `₹ ${(num / 100000).toFixed(2)} L`;
+    }
+    return `₹ ${num.toLocaleString("en-IN")}`;
   };
- 
-  const currentPage = pages[selectedId] || 1;
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  
-  const pageItems = items.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-  const setPage = (p) => setPages((prev) => ({ ...prev, [selectedId]: p }));
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-  
-  useEffect(() => {
-    const handleClickOutside = () => setOpenMenu(null);
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  // Format Date (e.g. 05 Aug 2026)
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = String(d.getDate()).padStart(2, "0");
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    return `${day} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+  };
 
-   const uniqueOrigins = useMemo(
-      () => ["All Countries", ...new Set(shipments.map((s) => s.route?.originCountry).filter(Boolean))],
-      [shipments],
-    );
-    const uniqueDests = useMemo(
-      () => ["All Countries", ...new Set(shipments.map((s) => s.route?.destinationCountry).filter(Boolean))],
-      [shipments],
-    );
-    const uniqueImporters = useMemo(
-      () => [
-        "All Importers",
-        ...new Set(shipments.map((s) => s.importer?.companyName).filter(Boolean)),
-      ],
-      [shipments],
-    );
-    const uniqueExporters = useMemo(
-      () => [
-        "All Exporters",
-        ...new Set(shipments.map((s) => s.exporter?.companyName).filter(Boolean)),
-      ],
-      [shipments],
-    );
-    const uniquePorts = useMemo(
-      () => ["All Ports", ...new Set(shipments.map((s) => s.route?.originCity).filter(Boolean))],
-      [],
-    );
-  
-    // --- RESET FILTER FUNCTION ---
-    const handleResetFilters = () => {
-      setSearchTerm("");
-      setSelectedOrigin("All Countries");
-      setSelectedDest("All Countries");
-      setSelectedImporter("All Importers");
-      setSelectedExporter("All Exporters");
-      setSelectedPort("All Ports");
+  // Unique options for filter dropdowns
+  const uniqueOrigins = useMemo(() => {
+    const list = Array.from(new Set(records.map((r) => r.originCountry).filter(Boolean)));
+    return ["All Countries", ...list.sort()];
+  }, [records]);
+
+  const uniqueDests = useMemo(() => {
+    const list = Array.from(new Set(records.map((r) => r.destinationCountry).filter(Boolean)));
+    return ["All Countries", ...list.sort()];
+  }, [records]);
+
+  const uniqueImporters = useMemo(() => {
+    const list = Array.from(new Set(records.map((r) => r.importer).filter(Boolean)));
+    return ["All Importers", ...list.sort()];
+  }, [records]);
+
+  const uniqueExporters = useMemo(() => {
+    const list = Array.from(new Set(records.map((r) => r.exporter).filter(Boolean)));
+    return ["All Exporters", ...list.sort()];
+  }, [records]);
+
+  const uniquePorts = useMemo(() => {
+    const list = Array.from(new Set(records.map((r) => r.portOfLoading).filter(Boolean)));
+    return ["All Ports", ...list.sort()];
+  }, [records]);
+
+  // Apply filters
+  const handleApplyFilters = () => {
+    setAppliedFilters({ ...filterInputs });
+    setCurrentPage(1);
+  };
+
+  // Reset filters
+  const handleResetFilters = () => {
+    const reset = {
+      search: "",
+      originCountry: "All Countries",
+      destinationCountry: "All Countries",
+      importer: "All Importers",
+      exporter: "All Exporters",
+      portOfLoading: "All Ports",
     };
+    setFilterInputs(reset);
+    setAppliedFilters(reset);
+    setCurrentPage(1);
+  };
 
-  const fetchCategories = async () => {
-    try {
-      const res = await API.get("/master/categories");
-      setCategories(res.data.data);
-  
-      if (res.data.data.length > 0) {
-        setSelectedId(res.data.data[0]._id);
-        fetchItems(res.data.data[0]._id);
+  // Filter records based on appliedFilters
+  const filteredRecords = useMemo(() => {
+    return records.filter((r) => {
+      // Search HS Code, Product Description, or ID
+      if (appliedFilters.search.trim()) {
+        const q = appliedFilters.search.toLowerCase();
+        const matchHs = (r.hsCode || "").toLowerCase().includes(q);
+        const matchDesc = (r.description || "").toLowerCase().includes(q);
+        const matchId = (r._id || "").toLowerCase().includes(q);
+        if (!matchHs && !matchDesc && !matchId) return false;
       }
-    } catch (err) {
-      toast.error("Failed to load categories");
-    }
+
+      // Origin Country
+      if (
+        appliedFilters.originCountry !== "All Countries" &&
+        r.originCountry !== appliedFilters.originCountry
+      ) {
+        return false;
+      }
+
+      // Destination Country
+      if (
+        appliedFilters.destinationCountry !== "All Countries" &&
+        r.destinationCountry !== appliedFilters.destinationCountry
+      ) {
+        return false;
+      }
+
+      // Importer
+      if (
+        appliedFilters.importer !== "All Importers" &&
+        r.importer !== appliedFilters.importer
+      ) {
+        return false;
+      }
+
+      // Exporter
+      if (
+        appliedFilters.exporter !== "All Exporters" &&
+        r.exporter !== appliedFilters.exporter
+      ) {
+        return false;
+      }
+
+      // Port of Loading
+      if (
+        appliedFilters.portOfLoading !== "All Ports" &&
+        r.portOfLoading !== appliedFilters.portOfLoading
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [records, appliedFilters]);
+
+  // Pagination calculation
+  const totalRecords = filteredRecords.length;
+  const totalPages = Math.ceil(totalRecords / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedRecords = filteredRecords.slice(startIndex, startIndex + pageSize);
+
+  // Column visibility toggle
+  const toggleColumn = (key) => {
+    setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const fetchItems = async (categoryId) => {
-    try {
-      const res = await API.get(`/master/items/${categoryId}`);
-      setItems(res.data.data);
-    } catch (err) {
-      toast.error("Failed to load items");
-    }
+  // Open Add Record Modal
+  const handleOpenAddModal = () => {
+    setEditingRecord(null);
+    setRecordForm({
+      hsCode: "",
+      description: "",
+      importer: "",
+      exporter: "",
+      originCountry: "United States",
+      destinationCountry: "India",
+      portOfLoading: "",
+      portOfDischarge: "",
+      shipDate: new Date().toISOString().split("T")[0],
+      arrivalDate: new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
+      value: "",
+      status: "In Transit",
+    });
+    setShowAddEditModal(true);
   };
 
-  const handleCategoryClick = (id) => {
-    setSelectedId(id);
-    setShowRight(true);
-    setPage(1);
-  
-    fetchItems(id); // 🔥 important
+  // Open Edit Record Modal
+  const handleOpenEditModal = (rec) => {
+    setEditingRecord(rec);
+    setRecordForm({
+      hsCode: rec.hsCode || "",
+      description: rec.description || "",
+      importer: rec.importer || "",
+      exporter: rec.exporter || "",
+      originCountry: rec.originCountry || "United States",
+      destinationCountry: rec.destinationCountry || "India",
+      portOfLoading: rec.portOfLoading || "",
+      portOfDischarge: rec.portOfDischarge || "",
+      shipDate: rec.shipDate || "",
+      arrivalDate: rec.arrivalDate || "",
+      value: rec.value || "",
+      status: rec.status || "In Transit",
+    });
+    setShowAddEditModal(true);
   };
 
-  
-
-  const handleAddCategory = async ({ name, subtitle }) => {
-    try {
-      const key = name.toLowerCase().replace(/\s+/g, "_");
-      const prefix = name
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .toUpperCase();
-  
-      const res = await API.post("/master/categories", {
-        name,
-        key,
-        prefix,
+  // Save Record (Add or Update)
+  const handleSaveRecord = (e) => {
+    e.preventDefault();
+    if (!recordForm.hsCode.trim() || !recordForm.description.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Required Fields",
+        text: "Please provide both HS Code and Product Description.",
       });
-  
-      toast.success("Category added");
-  
-      fetchCategories(); // refresh
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Error");
+      return;
     }
-  };
 
-  const handleAddItem = async ({ name }) => {
-    try {
-      await API.post("/master/items", {
-        categoryId: selectedId,
-        name,
+    if (editingRecord) {
+      // Update existing record
+      setRecords((prev) =>
+        prev.map((r) =>
+          r._id === editingRecord._id
+            ? { ...r, ...recordForm, value: Number(recordForm.value) || recordForm.value }
+            : r
+        )
+      );
+      Swal.fire({
+        icon: "success",
+        title: "Record Updated",
+        text: "The master data record has been successfully updated.",
+        timer: 1500,
+        showConfirmButton: false,
       });
-  
-      toast.success("Item added");
-      fetchItems(selectedId);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Error");
-    }
-  };
-
-  const handleUpdateItem = async (updatedItem) => {
-    try {
-      await API.put(`/master/items/${updatedItem._id}`, {
-        name: updatedItem.name,
-        status: updatedItem.status,
+    } else {
+      // Add new record
+      const newId = `SHIP${String(records.length + 1).padStart(3, "0")}`;
+      const newRec = {
+        _id: newId,
+        ...recordForm,
+        value: Number(recordForm.value) || recordForm.value,
+      };
+      setRecords((prev) => [newRec, ...prev]);
+      Swal.fire({
+        icon: "success",
+        title: "Record Added",
+        text: "The new master data record has been successfully saved.",
+        timer: 1500,
+        showConfirmButton: false,
       });
-  
-      toast.success("Item updated");
-      fetchItems(selectedId);
-    } catch (err) {
-      toast.error("Update failed");
+    }
+
+    setShowAddEditModal(false);
+  };
+
+  // Delete Record
+  const handleDeleteRecord = async (id) => {
+    const res = await Swal.fire({
+      title: "Delete Record?",
+      text: "Are you sure you want to delete this master data record?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      confirmButtonText: "Yes, delete",
+    });
+
+    if (res.isConfirmed) {
+      setRecords((prev) => prev.filter((r) => r._id !== id));
+      Swal.fire({
+        icon: "success",
+        title: "Deleted",
+        text: "Record removed successfully.",
+        timer: 1200,
+        showConfirmButton: false,
+      });
     }
   };
 
-  const getPrefix = () => {
-    return selected?.name.split(" ").map((w) => w[0]).join("").toUpperCase() || "ITM";
+  // Download CSV Template
+  const handleDownloadTemplate = () => {
+    const headers = [
+      "hsCode",
+      "description",
+      "importer",
+      "exporter",
+      "originCountry",
+      "destinationCountry",
+      "portOfLoading",
+      "portOfDischarge",
+      "shipDate",
+      "arrivalDate",
+      "value",
+      "status"
+    ];
+    const sampleRow = [
+      "84713010",
+      "Dell Latitude Business Laptop",
+      "TechNova India Pvt Ltd",
+      "Dell Technologies USA",
+      "United States",
+      "India",
+      "New York",
+      "Mumbai",
+      "2026-08-05",
+      "2026-08-20",
+      "24500000",
+      "Delivered"
+    ];
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), sampleRow.join(",")].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "master_data_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-   const filteredShipments = useMemo(() => {
-   return shipments.filter((shipment) => {
-     const matchesSearch =
-       (shipment.cargo?.hsCode?.description || "")
-         .toLowerCase()
-         .includes(searchTerm.toLowerCase()) ||
-       (shipment.cargo?.hsCode?.hsCode || "")
-         .includes(searchTerm) ||
-       (shipment.sbNumber || "")
-         .toLowerCase()
-         .includes(searchTerm.toLowerCase());
- 
-     const matchesOrigin =
-       selectedOrigin === "All Countries" ||
-       shipment.route?.originCountry === selectedOrigin;
- 
-     const matchesDest =
-       selectedDest === "All Countries" ||
-       shipment.route?.destinationCountry === selectedDest;
- 
-     const matchesImporter =
-       selectedImporter === "All Importers" ||
-       shipment.importer?.companyName === selectedImporter;
- 
-     const matchesExporter =
-       selectedExporter === "All Exporters" ||
-       shipment.exporter?.companyName === selectedExporter;
- 
-     const matchesPort =
-       selectedPort === "All Ports" ||
-       shipment.route?.originCity === selectedPort;
- 
-     return (
-       matchesSearch &&
-       matchesOrigin &&
-       matchesDest &&
-       matchesImporter &&
-       matchesExporter &&
-       matchesPort
-     );
-   });
- }, [
-   shipments,
-   searchTerm,
-   selectedOrigin,
-   selectedDest,
-   selectedImporter,
-   selectedExporter,
-   selectedPort,
- ]);
+  // Handle CSV Upload and Parse
+  const handleFileDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setUploadedFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleValidateCSV = () => {
+    if (!uploadedFile) {
+      Swal.fire({
+        icon: "warning",
+        title: "No File Selected",
+        text: "Please select or drop a CSV file to validate.",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.split(/\r\n|\n/).filter((line) => line.trim() !== "");
+        if (lines.length <= 1) {
+          Swal.fire({
+            icon: "warning",
+            title: "Empty CSV",
+            text: "The CSV file does not contain any data rows.",
+          });
+          return;
+        }
+
+        const headers = lines[0].split(",").map((h) => h.trim().replace(/^["']|["']$/g, ""));
+        const newRecords = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(",").map((c) => c.trim().replace(/^["']|["']$/g, ""));
+          if (cols.length >= 2) {
+            newRecords.push({
+              _id: `CSV-${Date.now()}-${i}`,
+              hsCode: cols[0] || "84713010",
+              description: cols[1] || "Imported Product",
+              importer: cols[2] || "Sample Importer",
+              exporter: cols[3] || "Sample Exporter",
+              originCountry: cols[4] || "United States",
+              destinationCountry: cols[5] || "India",
+              portOfLoading: cols[6] || "New York",
+              portOfDischarge: cols[7] || "Mumbai",
+              shipDate: cols[8] || new Date().toISOString().split("T")[0],
+              arrivalDate: cols[9] || new Date(Date.now() + 15 * 86400000).toISOString().split("T")[0],
+              value: Number(cols[10]) || 15000000,
+              status: cols[11] || "Delivered",
+            });
+          }
+        }
+
+        setRecords((prev) => [...newRecords, ...prev]);
+        setShowBulkModal(false);
+        setUploadedFile(null);
+
+        Swal.fire({
+          icon: "success",
+          title: "Import Successful",
+          text: `Successfully validated and imported ${newRecords.length} records.`,
+          timer: 1800,
+          showConfirmButton: false,
+        });
+      } catch (err) {
+        Swal.fire({
+          icon: "error",
+          title: "CSV Parse Error",
+          text: "Failed to parse the CSV file. Please make sure it follows the template format.",
+        });
+      }
+    };
+    reader.readAsText(uploadedFile);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 ">
-       {editItem && (
-        <EditItemModal
-          item={editItem}
-          onClose={() => setEditItem(null)}
-          onUpdate={handleUpdateItem}
-        />
-      )}
-
-      {showCatModal && <AddCategoryModal onClose={() => setShowCatModal(false)} onAdd={handleAddCategory} />}
-      {showItemModal && (
-        <AddItemModal
-          categoryName={selected?.name}
-          prefix={getPrefix()}
-          onClose={() => setShowItemModal(false)}
-          onAdd={handleAddItem}
-        />
-      )}           
-
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Master Data</h1>
-            <p className="text-xs sm:text-sm text-gray-400 mt-1">Manage categories, types, and dropdown data</p>
-          </div>
-          {/* <div className="flex items-start justify-around gap-2"> 
-             <button className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors shadow-sm whitespace-nowrap"> 
-                Upload Excel
-            </button>
-            <button  onClick={() => setShowAddRowModal(true)} className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors shadow-sm whitespace-nowrap"> 
-                New request 
-            </button>
-             <button
-            onClick={() => setShowCatModal(true)}
-            className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors shadow-sm whitespace-nowrap"
-          >
-            <FaPlus className="text-xs" /> Add Category
-          </button>
-          </div> */}
-         
+    <div className="space-y-5 pb-10">
+      {/* 1. Header with Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+            Master Data
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+            Manage import, export and shipment records.
+          </p>
         </div>
 
-        {/* <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex items-center gap-3">
+          {/* Add New Button */}
+          <button
+            onClick={handleOpenAddModal}
+            className="flex items-center gap-1.5 bg-[#00897B] hover:bg-[#00796B] text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
+          >
+            <Plus size={16} />
+            <span>Add New</span>
+          </button>
 
-          <div className={`w-full lg:w-64 xl:w-72 flex-shrink-0 ${showRight ? "hidden lg:block" : "block"}`}>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">Data Categories</h2>
-              <div className="flex flex-col gap-2">
-                {categories.map((cat) => (
-                  <div
-                    key={cat._id}
-                    onClick={() => handleCategoryClick(cat._id)}
-                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${selectedId === cat._id ? "border-teal-400 bg-teal-50/60" : "border-transparent hover:bg-gray-50"}`}
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                      <FaDatabase className="text-teal-500 text-sm" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className={`text-sm font-semibold truncate ${selectedId === cat._id ? "text-gray-900" : "text-gray-700"}`}>{cat.name}</p>
-                      <p className="text-xs text-gray-400">{selectedId === cat._id ? items.length : ""} Items</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className={`flex-1 min-w-0 ${showRight ? "block" : "hidden lg:block"}`}>
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5">
-
-              <div className="flex items-start justify-between mb-1 gap-2">
-                <div className="flex items-center gap-2">
-                  {showRight && (
-                    <button onClick={() => setShowRight(false)} className="lg:hidden w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-                      <FaTimes />
-                    </button>
-                  )}
-                  <div>
-                    <h2 className="text-sm sm:text-base font-semibold text-gray-800">{selected?.name}</h2>
-                    <p className="text-xs text-gray-400">{selected?.subtitle}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowItemModal(true)}
-                  className="flex items-center gap-1.5 bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
-                >
-                  <FaPlus className="text-xs" /> Add Item
-                </button>
-              </div>
-
-              <div className="overflow-x-auto mt-4">
-                <table className="w-full min-w-[380px]">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="text-left text-xs font-semibold text-gray-500 px-3 py-3 rounded-l-xl">CODE</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-3 py-3">NAME</th>
-                      <th className="text-center text-xs font-semibold text-gray-500 px-3 py-3">STATUS</th>
-                      <th className="text-center text-xs font-semibold text-gray-500 px-3 py-3 rounded-r-xl">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pageItems.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="text-center text-sm text-gray-400 py-10">No items yet. Click "+ Add Item" to add.</td>
-                      </tr>
-                    ) : (
-                      pageItems.map((item, i) => (
-                        <tr key={item._id} className={`border-t border-gray-100 ${i % 2 === 0 ? "" : ""}`}>
-                          <td className="text-sm text-gray-700 px-3 py-3">{item.code}</td>
-                          <td className="text-sm text-gray-700 px-3 py-3">{item.name}</td>
-                          <td className="text-center px-3 py-3">
-                            <span className={`text-xs font-medium px-3 py-1 rounded-full ${item.status === "active" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-500"}`}>
-                              {item.status}
-                            </span>
-                          </td>
-                          <td className="text-center px-3 py-3">
-                          <button
-              onClick={() => setEditItem(item)}
-              className="text-teal-500 hover:text-teal-600 text-sm font-medium flex items-center gap-1 mx-auto"
-            >
-              <FaPen className="text-xs" /> Edit
-            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {totalPages > 0 && (
-                <div className="flex items-center justify-end gap-2 mt-4 flex-wrap">
-                  <button
-                    onClick={() => setPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors"
-                  >
-                    Preview
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`w-9 h-9 rounded-xl text-sm font-medium transition-colors ${currentPage === p ? "bg-teal-500 text-white" : "border border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-
-            </div>
-          </div>
-
-        </div> */}
+          {/* Bulk Upload CSV Button */}
+          <button
+            onClick={() => {
+              setUploadedFile(null);
+              setShowBulkModal(true);
+            }}
+            className="flex items-center gap-2 border border-gray-300 hover:border-[#00897B] text-gray-700 hover:text-[#00897B] bg-white hover:bg-teal-50/50 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
+          >
+            <Upload size={15} />
+            <span>Bulk Upload CSV</span>
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm my-6 w-full ">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 items-end w-full">
-          {/* Input Search Box */}
-          <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase">
+      {/* 2. Top Filter Bar Card */}
+      <div className="bg-white rounded-xl border border-gray-200/90 p-4 sm:p-5 shadow-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
+          {/* HS Code / Product / ID Search */}
+          <div className="lg:col-span-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
               HS Code / Product / ID
             </label>
             <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Type to search..."
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:border-blue-500"
+                value={filterInputs.search}
+                onChange={(e) =>
+                  setFilterInputs({ ...filterInputs, search: e.target.value })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleApplyFilters();
+                }}
+                placeholder="Search HS code, product or ID..."
+                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all"
               />
-              <Search className="w-3 h-3 absolute right-2.5 top-3 text-slate-400" />
             </div>
           </div>
 
-          {/* Origin Dropdown */}
+          {/* Origin Country */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
               Origin Country
             </label>
             <div className="relative">
+              <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
-                value={selectedOrigin}
-                onChange={(e) => setSelectedOrigin(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 appearance-none focus:outline-none focus:border-blue-500"
+                value={filterInputs.originCountry}
+                onChange={(e) =>
+                  setFilterInputs({ ...filterInputs, originCountry: e.target.value })
+                }
+                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
               >
                 {uniqueOrigins.map((country, i) => (
                   <option key={i} value={country}>
@@ -1078,20 +735,27 @@ const handleAddShipmentRow = () => {
                   </option>
                 ))}
               </select>
-              <SlidersHorizontal className="w-3 h-3 absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 
-          {/* Destination Dropdown */}
+          {/* Destination */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
               Destination
             </label>
             <div className="relative">
+              <Globe className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
-                value={selectedDest}
-                onChange={(e) => setSelectedDest(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 appearance-none focus:outline-none focus:border-blue-500"
+                value={filterInputs.destinationCountry}
+                onChange={(e) =>
+                  setFilterInputs({ ...filterInputs, destinationCountry: e.target.value })
+                }
+                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
               >
                 {uniqueDests.map((dest, i) => (
                   <option key={i} value={dest}>
@@ -1099,20 +763,27 @@ const handleAddShipmentRow = () => {
                   </option>
                 ))}
               </select>
-              <SlidersHorizontal className="w-3 h-3 absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 
-          {/* Importer Dropdown */}
+          {/* Importer */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
               Importer
             </label>
             <div className="relative">
+              <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
-                value={selectedImporter}
-                onChange={(e) => setSelectedImporter(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 appearance-none focus:outline-none focus:border-blue-500"
+                value={filterInputs.importer}
+                onChange={(e) =>
+                  setFilterInputs({ ...filterInputs, importer: e.target.value })
+                }
+                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
               >
                 {uniqueImporters.map((imp, i) => (
                   <option key={i} value={imp}>
@@ -1120,20 +791,27 @@ const handleAddShipmentRow = () => {
                   </option>
                 ))}
               </select>
-              <SlidersHorizontal className="w-3 h-3 absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 
-          {/* Exporter Dropdown */}
+          {/* Exporter */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase">
-              Exporters
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
+              Exporter
             </label>
             <div className="relative">
+              <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
-                value={selectedExporter}
-                onChange={(e) => setSelectedExporter(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 appearance-none focus:outline-none focus:border-blue-500"
+                value={filterInputs.exporter}
+                onChange={(e) =>
+                  setFilterInputs({ ...filterInputs, exporter: e.target.value })
+                }
+                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
               >
                 {uniqueExporters.map((exp, i) => (
                   <option key={i} value={exp}>
@@ -1141,20 +819,27 @@ const handleAddShipmentRow = () => {
                   </option>
                 ))}
               </select>
-              <SlidersHorizontal className="w-3 h-3 absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 
-          {/* Loading Port Dropdown */}
+          {/* Port of Loading & Filter Action Buttons */}
           <div>
-            <label className="text-[11px] font-bold text-slate-400 block mb-1 uppercase">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
               Port of Loading
             </label>
             <div className="relative">
+              <Anchor className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <select
-                value={selectedPort}
-                onChange={(e) => setSelectedPort(e.target.value)}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 appearance-none focus:outline-none focus:border-blue-500"
+                value={filterInputs.portOfLoading}
+                onChange={(e) =>
+                  setFilterInputs({ ...filterInputs, portOfLoading: e.target.value })
+                }
+                className="w-full text-xs bg-white border border-gray-200 rounded-lg pl-8 pr-7 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#00897B] focus:border-[#00897B] transition-all appearance-none cursor-pointer"
               >
                 {uniquePorts.map((port, i) => (
                   <option key={i} value={port}>
@@ -1162,476 +847,700 @@ const handleAddShipmentRow = () => {
                   </option>
                 ))}
               </select>
-              <SlidersHorizontal className="w-3 h-3 absolute right-2.5 top-3 text-slate-400 pointer-events-none" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex w-full">
-             <button
-              onClick={handleApplyFilters}
-              className=" w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-xl py-2 px-3 transition shadow-sm  whitespace-nowrap"
-            >
-              Apply Filters
-            </button>
+        {/* Buttons Row: Apply Filters & Reset */}
+        <div className="flex items-center justify-end gap-2.5 mt-3 pt-3 border-t border-gray-100">
+          <button
+            onClick={handleApplyFilters}
+            className="bg-[#00897B] hover:bg-[#00796B] text-white text-xs font-semibold px-5 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
+          >
+            Apply Filters
+          </button>
+          <button
+            onClick={handleResetFilters}
+            className="border border-gray-300 hover:border-teal-600 text-gray-700 hover:text-teal-700 text-xs font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 hover:bg-teal-50/50 cursor-pointer"
+          >
+            <RotateCcw size={13} />
+            <span>Reset</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Controls Row above table (Records per page & Columns toggle) */}
+      <div className="flex items-center justify-between">
+        {/* Records Per Page Dropdown */}
+        <div className="relative inline-block">
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none shadow-xs cursor-pointer"
+          >
+            <option value={5}>5 records</option>
+            <option value={10}>10 records</option>
+            <option value={20}>20 records</option>
+            <option value={50}>50 records</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
-          {/* Reset Filters Control */}
-          <div className="flex gap-2">
+        </div>
+
+        {/* Columns Toggle Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowColumnsDropdown((prev) => !prev)}
+            className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-medium rounded-lg px-3 py-1.5 shadow-xs transition-colors cursor-pointer"
+          >
+            <Columns size={14} className="text-gray-500" />
+            <span>Columns</span>
+            <svg className="w-3.5 h-3.5 text-gray-400 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showColumnsDropdown && (
+            <>
+              <div
+                className="fixed inset-0 z-20"
+                onClick={() => setShowColumnsDropdown(false)}
+              />
+              <div className="absolute right-0 mt-1.5 w-52 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-30 space-y-0.5">
+                <p className="text-[11px] font-bold text-gray-400 px-2 py-1 uppercase tracking-wider">
+                  Toggle Columns
+                </p>
+                {allColumns.map((col) => (
+                  <label
+                    key={col.key}
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded-lg text-xs text-gray-700 cursor-pointer select-none"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={visibleColumns[col.key]}
+                      onChange={() => toggleColumn(col.key)}
+                      className="rounded text-teal-600 focus:ring-teal-500"
+                    />
+                    <span>{col.label}</span>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* 4. Data Table */}
+      <div className="bg-white rounded-xl border border-gray-200/90 shadow-xs overflow-hidden">
+        {paginatedRecords.length === 0 ? (
+          <div className="p-12 text-center text-gray-500 space-y-3">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto text-gray-400">
+              <FileText size={22} />
+            </div>
+            <p className="text-sm font-semibold text-gray-800">No records found</p>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto">
+              No master data records match your current filter criteria. Try resetting filters or adding a new record.
+            </p>
             <button
               onClick={handleResetFilters}
-              className="flex items-center justify-center border border-slate-200 text-red-500 hover:bg-red-50 rounded-lg px-4 py-2 bg-white shadow-sm font-semibold text-xs w-full transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#00897B] text-white rounded-lg text-xs font-semibold hover:bg-[#00796B] transition-colors cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5 mr-1" /> Reset
+              <RotateCcw size={13} /> Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                  {visibleColumns.hsCode && <th className="py-3.5 px-3.5 whitespace-nowrap">HS CODE</th>}
+                  {visibleColumns.description && <th className="py-3.5 px-3.5 whitespace-nowrap min-w-[200px]">PRODUCT DESCRIPTION</th>}
+                  {visibleColumns.importer && <th className="py-3.5 px-3.5 whitespace-nowrap">IMPORTER</th>}
+                  {visibleColumns.exporter && <th className="py-3.5 px-3.5 whitespace-nowrap">EXPORTER</th>}
+                  {visibleColumns.originCountry && <th className="py-3.5 px-3.5 whitespace-nowrap">ORIGIN</th>}
+                  {visibleColumns.destinationCountry && <th className="py-3.5 px-3.5 whitespace-nowrap">DESTINATION</th>}
+                  {visibleColumns.portOfLoading && <th className="py-3.5 px-3.5 whitespace-nowrap">PORT OF LOADING</th>}
+                  {visibleColumns.portOfDischarge && <th className="py-3.5 px-3.5 whitespace-nowrap">PORT OF DISCHARGE</th>}
+                  {visibleColumns.shipDate && <th className="py-3.5 px-3.5 whitespace-nowrap">SHIP DATE</th>}
+                  {visibleColumns.arrivalDate && <th className="py-3.5 px-3.5 whitespace-nowrap">ARRIVAL DATE</th>}
+                  {visibleColumns.value && <th className="py-3.5 px-3.5 whitespace-nowrap font-bold text-gray-700">VALUE (INR)</th>}
+                  {visibleColumns.actions && <th className="py-3.5 px-3.5 text-center whitespace-nowrap">ACTIONS</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {paginatedRecords.map((row) => (
+                  <tr
+                    key={row._id}
+                    className="hover:bg-teal-50/30 transition-colors text-gray-700 group"
+                  >
+                    {/* HS Code */}
+                    {visibleColumns.hsCode && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap font-medium text-gray-900">
+                        {row.hsCode}
+                      </td>
+                    )}
+
+                    {/* Product Description */}
+                    {visibleColumns.description && (
+                      <td className="py-3.5 px-3.5 font-medium text-gray-800">
+                        {row.description}
+                      </td>
+                    )}
+
+                    {/* Importer */}
+                    {visibleColumns.importer && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                        {row.importer}
+                      </td>
+                    )}
+
+                    {/* Exporter */}
+                    {visibleColumns.exporter && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                        {row.exporter}
+                      </td>
+                    )}
+
+                    {/* Origin Country with Flag */}
+                    {visibleColumns.originCountry && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap">
+                        <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
+                          <ReactCountryFlag
+                            countryCode={countryCodes[row.originCountry] || ""}
+                            svg
+                            style={{ width: "18px", height: "13px" }}
+                          />
+                        </span>
+                        <span className="text-gray-700 font-medium align-middle">
+                          {row.originCountry}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* Destination Country with Flag */}
+                    {visibleColumns.destinationCountry && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap">
+                        <span className="mr-1.5 inline-flex align-middle shadow-xs rounded-xs">
+                          <ReactCountryFlag
+                            countryCode={countryCodes[row.destinationCountry] || ""}
+                            svg
+                            style={{ width: "18px", height: "13px" }}
+                          />
+                        </span>
+                        <span className="text-gray-700 font-medium align-middle">
+                          {row.destinationCountry}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* Port of Loading */}
+                    {visibleColumns.portOfLoading && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                        {row.portOfLoading}
+                      </td>
+                    )}
+
+                    {/* Port of Discharge */}
+                    {visibleColumns.portOfDischarge && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                        {row.portOfDischarge}
+                      </td>
+                    )}
+
+                    {/* Ship Date */}
+                    {visibleColumns.shipDate && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                        {formatDate(row.shipDate)}
+                      </td>
+                    )}
+
+                    {/* Arrival Date */}
+                    {visibleColumns.arrivalDate && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap text-gray-600">
+                        {formatDate(row.arrivalDate)}
+                      </td>
+                    )}
+
+                    {/* Value (INR) */}
+                    {visibleColumns.value && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap font-bold text-gray-900">
+                        {formatValueINR(row.value)}
+                      </td>
+                    )}
+
+                    {/* Actions */}
+                    {visibleColumns.actions && (
+                      <td className="py-3.5 px-3.5 whitespace-nowrap text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setViewingRecord(row)}
+                            className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-colors cursor-pointer"
+                            title="View Details"
+                          >
+                            <Eye size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleOpenEditModal(row)}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+                            title="Edit Record"
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRecord(row._id)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                            title="Delete Record"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* 5. Table Footer / Pagination */}
+        <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
+          <p className="text-xs text-gray-500">
+            Showing {totalRecords === 0 ? 0 : startIndex + 1}-{Math.min(startIndex + pageSize, totalRecords)} of {totalRecords} records
+          </p>
+
+          <div className="flex items-center gap-1.5">
+            {/* Prev Button */}
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {/* Page Number Buttons */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum)}
+                className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  currentPage === pageNum
+                    ? "bg-[#00897B] text-white"
+                    : "border border-gray-200 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {pageNum}
+              </button>
+            ))}
+
+            {/* Next Button */}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <span>Next</span>
+              <ChevronRight size={14} />
             </button>
           </div>
         </div>
       </div>
 
-       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden max-w-6xl w-full">
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-50/50">
-          <div className="text-sm font-bold text-slate-800">
-            Filtered: {filteredShipments.length} Results
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 font-semibold text-xs px-3 py-1.5 rounded-lg shadow-sm hover:bg-slate-50">
-              <Columns className="w-3.5 h-3.5 text-slate-400" /> Columns
-            </button>
-            <div className="flex items-center border border-slate-200 rounded-lg bg-white p-0.5 shadow-sm">
-              <button className="p-1 bg-slate-100 text-slate-700 rounded-md">
-                <List className="w-3.5 h-3.5" />
-              </button>
-              <button className="p-1 text-slate-400 hover:text-slate-600">
-                <LayoutGrid className="w-3.5 h-3.5" />
+      {/* 6. Add / Edit Record Modal (Matches screenshot bottom-left) */}
+      {showAddEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-gray-100 max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">
+                {editingRecord ? "Edit Record" : "Add New Record"}
+              </h3>
+              <button
+                onClick={() => setShowAddEditModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X size={18} />
               </button>
             </div>
-          </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/70 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-               
-                <th className="py-3 px-3">HS Code</th>
-                <th className="py-3 px-4 max-w-[180px]">Product Description</th>
-                <th className="py-3 px-4">Importer</th>
-                <th className="py-3 px-4">Exporter</th>
-                <th className="py-3 px-3">Origin</th>
-                <th className="py-3 px-3">Dest</th>
-                <th className="py-3 px-4">Port of Loading</th>
-                <th className="py-3 px-4">Port of Discharge</th>
-                <th className="py-3 px-3">Ship Date</th>
-                <th className="py-3 px-3">Arr. Date</th>
-                <th className="py-3 px-4 text-right">Value (INR)</th>
-                <th className="py-3 px-4 text-center">Status</th>
-                <th className="py-3 px-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredShipments.length > 0 ? (
-                filteredShipments.map((row, idx) => (
-                  <tr
-                    key={idx}
-                    className="hover:bg-slate-50/80 transition-colors"
-                  >
-                  
-                    <td className="py-3.5 px-3 text-slate-500 font-medium">
-                      {row.cargo?.hsCode?.hsCode}
-                    </td>
-                    <td
-                      className="py-3.5 px-4 font-medium text-slate-700 max-w-[180px] truncate"
-                      title={row.cargo?.description}
-                    >
-                      {row.cargo?.description}
-                    </td>
-                    <td className="py-3.5 px-4 font-medium text-slate-600">
-                      {row.importer?.companyName}
-                    </td>
-                    <td className="py-3.5 px-4 font-medium text-slate-600">
-                      {row.exporter?.companyName}
-                    </td>
-                    <td className="py-3.5 px-3 whitespace-nowrap">
-                      <span className="mr-1.5 inline-flex align-middle shadow-sm rounded-sm ">
-                        <ReactCountryFlag
-                          countryCode={countryCodes[row.route?.originCountry] || ""}
-                          svg
-                          style={{ width: "18px", height: "13px" }}
-                        />
-                      </span>
-                      <span className="text-slate-600 font-medium align-middle">
-                        {row.route?.originCountry}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-3 whitespace-nowrap">
-                      <span className="mr-1.5 inline-flex align-middle shadow-sm rounded-sm ">
-                        <ReactCountryFlag
-                          countryCode={countryCodes[row.route?.destinationCountry] || ""}
-                          svg
-                          style={{ width: "18px", height: "13px" }}
-                        />
-                      </span>
-                      <span className="text-slate-600 font-medium align-middle">
-                        {row.route?.destinationCountry}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-500">
-                      {row.route?.originCity}
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-500">
-                      {row.route?.destinationCity}
-                    </td>
-                    <td className="py-3.5 px-3 text-slate-500 whitespace-nowrap">
-                      {row.shipmentDate ? new Date(row.shipmentDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short",year: "numeric",}) : "-"}
-                    </td>
-                    <td className="py-3.5 px-3 text-slate-500 whitespace-nowrap">
-                      {row.eta ? new Date(row.eta).toLocaleDateString("en-GB", {day: "2-digit", month: "short", year: "numeric",}) : "-"}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-slate-800 whitespace-nowrap">
-                      ₹ {(row.cargo?.value / 10000000).toFixed(2)} Cr
-                    </td>
-                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${
-                          row.shipmentStatus === "Delivered"
-                            ? "bg-green-50 text-green-600"
-                            : row.shipmentStatus === "In Transit"
-                              ? "bg-blue-50 text-blue-600"
-                              : "bg-orange-50 text-orange-600"
-                        }`}
-                      >
-                        {row.shipmentStatus}
-                      </span>
-                    </td>
-               
-                       <td className="py-3 text-center relative">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                         setOpenMenu(openMenu === idx ? null : idx);
-                                        }}
-                                        className="text-slate-400 hover:text-slate-600"
-                                      >
-                                        <MoreVertical size={15} />
-                                      </button>
-                    
-                                      {openMenu === idx && (
-                                        <div
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="absolute right-0 top-10 z-20 w-36 bg-white border border-gray-200 rounded-xl shadow-lg p-1.5 flex flex-col gap-1 text-left"
-                                        >
-                                          
-                                            <button
-                                              onClick={() => {
-                                              setOpenMenu(null);
-                                              }}
-                                              className="w-full py-1.5 px-2.5 rounded-lg bg-blue-50 text-blue-600 font-medium text-xs text-left hover:bg-blue-100 transition-colors"
-                                            >
-                                              View
-                                            </button>
-                                          
-                                        </div>
-                                          )}
-                                        </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="13"
-                    className="text-center py-8 text-slate-400 font-medium"
-                  >
-                    No data found matching current filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer info pagination */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-xs font-semibold text-slate-400">
-            Showing {filteredShipments.length} rows
-          </div>
-          <div className="flex items-center gap-1">
-            <button className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-400">
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <button className="px-3 py-1 rounded-lg text-xs font-bold bg-blue-600 text-white border border-blue-600">
-              1
-            </button>
-            <button className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500">
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-      </div> 
-
-
-        {showAddRowModal && (
-          <div
-            className="fixed inset-0 z-[999] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4"
-            onClick={() => setShowAddRowModal(false)}
-          >
-            <div
-              className="w-full max-w-2xl bg-white rounded-2xl border border-slate-200 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            {/* Modal Body Form */}
+            <form onSubmit={handleSaveRecord} className="p-6 overflow-y-auto space-y-4">
+              {/* Row 1: HS Code & Product Description */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800">
-                    Add Master data 
-                  </h3>
-
-                  <p className="text-xs text-slate-400 mt-1">
-                    Enter  details to add master data
-                  </p>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    HS Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.hsCode}
+                    onChange={(e) => setRecordForm({ ...recordForm, hsCode: e.target.value })}
+                    placeholder="Enter HS code"
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowAddRowModal(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Product Description <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.description}
+                    onChange={(e) => setRecordForm({ ...recordForm, description: e.target.value })}
+                    placeholder="Enter product description"
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
               </div>
 
-              {/* Form */}
-              <div className="px-5 py-4 max-h-[65vh] overflow-y-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Row 2: Importer & Exporter */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Importer <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.importer}
+                    onChange={(e) => setRecordForm({ ...recordForm, importer: e.target.value })}
+                    placeholder="Select or enter importer"
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
 
-                  {/* HS Code */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      HS Code
-                    </label>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Exporter <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.exporter}
+                    onChange={(e) => setRecordForm({ ...recordForm, exporter: e.target.value })}
+                    placeholder="Select or enter exporter"
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
 
-                    <input
-                      type="text"
-                      value={newShipment.hsCode}
-                      onChange={(e) =>
-                        handleShipmentChange("hsCode", e.target.value)
-                      }
-                      placeholder="Enter HS Code"
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
+              {/* Row 3: Origin & Destination Country */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Origin Country <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={recordForm.originCountry}
+                    onChange={(e) => setRecordForm({ ...recordForm, originCountry: e.target.value })}
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                  >
+                    <option value="">Select origin country</option>
+                    {Object.keys(countryCodes).map((c, i) => (
+                      <option key={i} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
 
-                  {/* Product Description */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Product Description
-                    </label>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Destination Country <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={recordForm.destinationCountry}
+                    onChange={(e) => setRecordForm({ ...recordForm, destinationCountry: e.target.value })}
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white"
+                  >
+                    <option value="">Select destination country</option>
+                    {Object.keys(countryCodes).map((c, i) => (
+                      <option key={i} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                    <input
-                      type="text"
-                      value={newShipment.description}
-                      onChange={(e) =>
-                        handleShipmentChange("description", e.target.value)
-                      }
-                      placeholder="Enter product description"
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
+              {/* Row 4: Port of Loading & Port of Discharge */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Port of Loading <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.portOfLoading}
+                    onChange={(e) => setRecordForm({ ...recordForm, portOfLoading: e.target.value })}
+                    placeholder="Select or enter port of loading"
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
 
-                  {/* Importer */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Importer
-                    </label>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Port of Discharge <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={recordForm.portOfDischarge}
+                    onChange={(e) => setRecordForm({ ...recordForm, portOfDischarge: e.target.value })}
+                    placeholder="Select or enter port of discharge"
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
 
-                    <input
-                      type="text"
-                      value={newShipment.importer}
-                      onChange={(e) =>
-                        handleShipmentChange("importer", e.target.value)
-                      }
-                      placeholder="Enter importer"
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
+              {/* Row 5: Ship Date, Arrival Date & Value */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Ship Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={recordForm.shipDate}
+                    onChange={(e) => setRecordForm({ ...recordForm, shipDate: e.target.value })}
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
 
-                  {/* Exporter */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Exporter
-                    </label>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Arrival Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={recordForm.arrivalDate}
+                    onChange={(e) => setRecordForm({ ...recordForm, arrivalDate: e.target.value })}
+                    className="w-full text-xs px-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
+                  />
+                </div>
 
-                    <input
-                      type="text"
-                      value={newShipment.exporter}
-                      onChange={(e) =>
-                        handleShipmentChange("exporter", e.target.value)
-                      }
-                      placeholder="Enter exporter"
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
-
-                  {/* Origin */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Origin
-                    </label>
-
-                    <input
-                      type="text"
-                      value={newShipment.origin}
-                      onChange={(e) =>
-                        handleShipmentChange("origin", e.target.value)
-                      }
-                      placeholder="Enter origin country"
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
-
-                  {/* Destination */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Dest
-                    </label>
-
-                    <input
-                      type="text"
-                      value={newShipment.dest}
-                      onChange={(e) =>
-                        handleShipmentChange("dest", e.target.value)
-                      }
-                      placeholder="Enter destination country"
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
-
-                  {/* Port Loading */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Port of Loading
-                    </label>
-
-                    <input
-                      type="text"
-                      value={newShipment.portLoading}
-                      onChange={(e) =>
-                        handleShipmentChange("portLoading", e.target.value)
-                      }
-                      placeholder="Enter loading port"
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
-
-                  {/* Port Discharge */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Port of Discharge
-                    </label>
-
-                    <input
-                      type="text"
-                      value={newShipment.portDischarge}
-                      onChange={(e) =>
-                        handleShipmentChange("portDischarge", e.target.value)
-                      }
-                      placeholder="Enter discharge port"
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
-
-                  {/* Ship Date */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Ship Date
-                    </label>
-
-                    <input
-                      type="date"
-                      value={newShipment.shipDate}
-                      onChange={(e) =>
-                        handleShipmentChange("shipDate", e.target.value)
-                      }
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
-
-                  {/* Arrival Date */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Arr. Date
-                    </label>
-
-                    <input
-                      type="date"
-                      value={newShipment.arrDate}
-                      onChange={(e) =>
-                        handleShipmentChange("arrDate", e.target.value)
-                      }
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    />
-                  </div>
-
-                  {/* Value */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Value (INR)
-                    </label>
-
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Value (INR) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-xs">₹</span>
                     <input
                       type="number"
-                      value={newShipment.value}
-                      onChange={(e) =>
-                        handleShipmentChange("value", e.target.value)
-                      }
+                      required
+                      value={recordForm.value}
+                      onChange={(e) => setRecordForm({ ...recordForm, value: e.target.value })}
                       placeholder="Enter value"
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
+                      className="w-full text-xs pl-7 pr-3.5 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500"
                     />
                   </div>
-
-                  {/* Status */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500 mb-1.5">
-                      Status
-                    </label>
-
-                    <select
-                      value={newShipment.status}
-                      onChange={(e) =>
-                        handleShipmentChange("status", e.target.value)
-                      }
-                      className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
-                    >
-                      <option value="In Transit">In Transit</option>
-                      <option value="Delivered">Delivered</option>
-                      <option value="Pending">Pending</option>
-                    </select>
-                  </div>
-
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
+              {/* Footer Buttons */}
+              <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setShowAddRowModal(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  onClick={() => setShowAddEditModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
-
                 <button
-                  type="button"
-                  onClick={handleAddShipmentRow}
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 flex items-center gap-1.5"
+                  type="submit"
+                  className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Master data
+                  Save Record
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Bulk Upload CSV Modal (Matches screenshot bottom-right) */}
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-gray-100">
+            {/* Header */}
+            <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Bulk Upload CSV</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Import multiple trade records at once.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00897B] hover:text-[#00796B] transition-colors cursor-pointer"
+                  title="Download sample CSV template"
+                >
+                  <Download size={14} />
+                  <span>Download CSV Template</span>
+                </button>
+                <button
+                  onClick={() => setShowBulkModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
                 </button>
               </div>
             </div>
-          </div>
-        )}
 
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              {/* Drag & Drop Area */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleFileDrop}
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
+                  isDragging
+                    ? "border-[#00897B] bg-teal-50/50"
+                    : "border-teal-200 hover:border-teal-400 bg-teal-50/20"
+                }`}
+                onClick={() => document.getElementById("csv-file-input").click()}
+              >
+                <div className="w-12 h-12 rounded-full bg-teal-100/70 text-[#00897B] flex items-center justify-center mb-3">
+                  <UploadCloud size={26} />
+                </div>
+                <p className="text-sm font-bold text-gray-800">
+                  {uploadedFile ? uploadedFile.name : "Drag & drop your CSV file here"}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  or <span className="text-[#00897B] font-semibold underline">browse files</span>
+                </p>
+                <span className="text-[10px] text-gray-400 mt-2 bg-white px-2 py-0.5 rounded-full border border-gray-200">
+                  .csv files only
+                </span>
+                <input
+                  id="csv-file-input"
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setUploadedFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Informational Alert Box */}
+              <div className="bg-sky-50 border border-sky-100 rounded-xl p-3 flex items-center gap-2.5 text-sky-800 text-xs">
+                <Info size={16} className="text-sky-600 shrink-0" />
+                <span>Match the template columns before uploading.</span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowBulkModal(false)}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleValidateCSV}
+                className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg shadow-xs transition-colors cursor-pointer"
+              >
+                Validate & Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. View Record Details Modal (When clicking Eye icon) */}
+      {viewingRecord && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-100">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Shipment Details</h3>
+                <p className="text-xs text-gray-400">{viewingRecord._id}</p>
+              </div>
+              <button
+                onClick={() => setViewingRecord(null)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100 space-y-2">
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-500">HS Code:</span>
+                  <span className="font-bold text-gray-900">{viewingRecord.hsCode}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-500">Product:</span>
+                  <span className="font-semibold text-gray-800 text-right max-w-[240px]">{viewingRecord.description}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-semibold text-gray-500">Value (INR):</span>
+                  <span className="font-bold text-emerald-700">{formatValueINR(viewingRecord.value)}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="border border-gray-100 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Importer</p>
+                  <p className="font-semibold text-gray-800">{viewingRecord.importer}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{viewingRecord.destinationCountry}</p>
+                </div>
+                <div className="border border-gray-100 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Exporter</p>
+                  <p className="font-semibold text-gray-800">{viewingRecord.exporter}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">{viewingRecord.originCountry}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="border border-gray-100 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Port of Loading</p>
+                  <p className="font-semibold text-gray-800">{viewingRecord.portOfLoading}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">Ship Date: {formatDate(viewingRecord.shipDate)}</p>
+                </div>
+                <div className="border border-gray-100 rounded-xl p-3">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Port of Discharge</p>
+                  <p className="font-semibold text-gray-800">{viewingRecord.portOfDischarge}</p>
+                  <p className="text-[11px] text-gray-500 mt-1">Arrival Date: {formatDate(viewingRecord.arrivalDate)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setViewingRecord(null)}
+                className="px-5 py-2 text-xs font-semibold text-white bg-[#00897B] hover:bg-[#00796B] rounded-lg transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
