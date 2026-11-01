@@ -426,6 +426,7 @@ function CreateNotice({ setShowNotice }) {
 export default function AdminDashboard({profileMode=false}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState(profileMode ? "My Profile" : "Admin Dashboard");
+  const [noticeMode, setNoticeMode] = useState("list");
   const [showNotice, setShowNotice] = useState(false);
   const [showAddPlan, setShowAddPlan] = useState(false);
    const [showBot, setShowBot] = useState(false);
@@ -473,6 +474,7 @@ export default function AdminDashboard({profileMode=false}) {
               key={label}
               onClick={() => {
                 setActiveNav(label);
+                if (label === "Notices") setNoticeMode("list");
                 setShowBot(false)
                 setSidebarOpen(false);
               }}
@@ -536,7 +538,7 @@ export default function AdminDashboard({profileMode=false}) {
               <div
                 className="flex justify-end mb-3  "
               >
-                <button onClick={() => { setActiveNav("Notices"); setShowNotice(true); }}
+                <button onClick={() => { setActiveNav("Notices"); setNoticeMode("create"); }}
                   className="flex items-center gap-1.5 bg-teal-500 hover:bg-teal-600 text-white 
             text-sm font-semibold px-3 py-2 rounded-lg transition-colors"
                 >
@@ -867,7 +869,7 @@ export default function AdminDashboard({profileMode=false}) {
            {activeNav === "DGFT Schemes" && <DGFTSchemes/>}
 
            {activeNav === "Shipment" && <Shipment /> }
-           {activeNav === "Notices" && <NoticesSection setShowNotice={setShowNotice} /> }
+           {activeNav === "Notices" && <NoticesSection mode={noticeMode} setMode={setNoticeMode} /> }
 
 
            {activeNav === "Vendors/ Partners" && <VendorsPartners /> }
@@ -891,7 +893,7 @@ export default function AdminDashboard({profileMode=false}) {
           {notifications && (<NotificationsModal onClose={() => setNotifications(false)} />)}
 
 
-      <NoticeManagementModal isOpen={showNotice} onClose={() => setShowNotice(false)} />
+      {/* Modal removed - full page navigation used */}
       
        
       {fabOpen && <div className="fixed inset-0 z-30" onClick={() => setFabOpen(false)} />}
